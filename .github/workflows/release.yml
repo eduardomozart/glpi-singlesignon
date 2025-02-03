@@ -56,12 +56,12 @@ jobs:
                 ${{ steps.changelog.outputs.changelog }}
               write-mode: append
 
-          - name: Commit and push CHANGELOG.md
-            uses: EndBug/add-and-commit@v7
+          - name: Commit CHANGELOG.md
+            uses: stefanzweifel/git-auto-commit-action@v4
             with:
-              add: CHANGELOG.md
-              message: "chore: Update CHANGELOG.md"
               branch: master
+              commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
+              file_pattern: CHANGELOG.md
           
     build:
       name: Upload Release Asset
