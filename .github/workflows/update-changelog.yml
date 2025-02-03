@@ -9,9 +9,9 @@ jobs:
   generate-changelog:
     runs-on: ubuntu-latest
     steps:
-    - uses: ardalanamini/auto-changelog@v4
+    - name: Make Changelog
+      uses: ardalanamini/auto-changelog@v4
       id  : changelog
-      name: Changelog
       with:
         github-token            : ${{ github.token }}
         commit-types            : |
@@ -36,3 +36,9 @@ jobs:
         include-commit-links    : true
         semver                  : true
         use-github-autolink     : true
+
+    - name: Upload Changelog
+      uses: actions/upload-artifact@v4
+      with:
+        name: Changelog
+        path: ${{ steps.changelog.outputs.changelog }}
