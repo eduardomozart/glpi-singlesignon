@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.5] - 2025-02-03
+### :flying_saucer: Other Changes
+- [`903da19`](https://github.com/eduardomozart/glpi-singlesignon/commit/903da193d1cf276b74240b4ec82608427baa826b) - Update extract_template.sh *(commit by [@eduardomozart](https://github.com/eduardomozart))*
+- [`95f0a78`](https://github.com/eduardomozart/glpi-singlesignon/commit/95f0a789ff4e891e40bc42a47733cfd402c049c1) - Update release.yml *(commit by [@eduardomozart](https://github.com/eduardomozart))*
+- [`3413a3c`](https://github.com/eduardomozart/glpi-singlesignon/commit/3413a3cef09f05ed17be774d70181636a6394ff4) - Update release.yml *(commit by [@eduardomozart](https://github.com/eduardomozart))*
+
+
 ## [v1.3.4] - 2025-02-03
 ### :sparkles: New Features
 - [`4901caf`](https://github.com/eduardomozart/glpi-singlesignon/commit/4901cafe3c5d3eb0f7f41e93bff4a50912c166ae) - Added es_ES translation *(commit by [@edgardmessias](https://github.com/edgardmessias))*
@@ -28,3 +35,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [`a8bca9c`](https://github.com/eduardomozart/glpi-singlesignon/commit/a8bca9c753b7b0d2b780a0045febeca6da7208fc) - **changelog**: Update changelog *(commit by [@invalid-email-address](https://github.com/invalid-email-address))*
 
 [v1.3.4]: https://github.com/eduardomozart/glpi-singlesignon/compare/v1.3.3...v1.3.4
+[v1.3.5]: https://github.com/eduardomozart/glpi-singlesignon/compare/v1.3.4...v1.3.5
