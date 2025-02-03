@@ -22,7 +22,13 @@ jobs:
       - name: "✏️ Generate release changelog"
         uses: janheinrichmerker/action-github-changelog-generator@v2.3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} 
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "📤 Upload changelog"
+        uses: actions/upload-artifact@v4
+        with:
+          name: "Changelog"
+          path: CHANGELOG.md
           
     build:
       name: Upload Release Asset
