@@ -4,6 +4,8 @@ on:
    push:
       branches:
          - "master"
+      paths:
+         - "**.po"
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -24,7 +26,7 @@ jobs:
       uses: whtsky/msgfmt-action@20190305
       
     - name: Generate mo
-      run:  find ./locales -type f -name "*.po" -exec msgfmt {} -o {}.mo \;
+      run:  cd locales && find . -type f -name "*.po" -exec msgfmt {} -o {}.mo \;
 
     - name: Commit changes
       uses: EndBug/add-and-commit@v5.1.0
