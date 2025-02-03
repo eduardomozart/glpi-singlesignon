@@ -1,0 +1,25 @@
+name: Transifex
+
+on:
+   push:
+      branches:
+         - "master"
+   pull_request:
+      branches:
+         - "*"
+
+jobs:
+   transifex:
+      runs-on: ubuntu-latest
+      steps:
+         - name: Transifex Commit
+           uses: actions/checkout@v3
+      with:
+         repository: edgardmessias/glpi-singlesignon
+         ref: 'master'
+         token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+    - name: setup git config
+      run: |
+         git config user.name "GitHub Actions Bot (Transifex)"
+         git config user.email "<>"
+    - run: git push origin master
