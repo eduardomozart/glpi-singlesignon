@@ -4,9 +4,8 @@ on:
    push:
       branches:
          - "master"
-   pull_request:
-      branches:
-         - "*"
+      paths:
+         - '**.po'
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
