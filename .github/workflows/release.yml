@@ -11,6 +11,7 @@ env:
 
 jobs:
     generate-changelog:
+      name: Generate Changelog
       runs-on: ubuntu-latest
       steps:
           - name: Make Changelog
