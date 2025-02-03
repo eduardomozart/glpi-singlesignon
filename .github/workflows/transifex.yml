@@ -7,19 +7,9 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-jobs:
-name: Update POT
-on:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - 'locales/**'
-
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
 jobs:
+   updatepot:
     name: Update POT
     permissions: write-all
     runs-on: ubuntu-latest
