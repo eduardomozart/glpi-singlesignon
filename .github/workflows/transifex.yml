@@ -13,7 +13,6 @@ env:
 
 jobs:
    generatemo:
-    
     name: Generate mo
     permissions: write-all
     runs-on: ubuntu-latest
