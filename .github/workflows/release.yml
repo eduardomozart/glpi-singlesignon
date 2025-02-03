@@ -38,6 +38,7 @@ jobs:
               token: ${{ github.token }}
               tag: ${{ github.ref_name }}
               writeToFile: true
+              excludeTypes: build,docs,style
               includeInvalidCommits: true
 
           - name: Commit CHANGELOG.md
