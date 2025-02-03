@@ -17,47 +17,14 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v2
 
-          - name: Make Changelog
-            uses: ardalanamini/auto-changelog@v4
-            id  : changelog
+          - name: Update CHANGELOG
+            id: changelog
+            uses: requarks/changelog-action@v1
             with:
-              github-token            : ${{ github.token }}
-              commit-types            : |
-                feat    : New Features
-                fix     : Bug Fixes
-                build   : Build System & Dependencies
-                perf    : Performance Improvements
-                docs    : Documentation
-                test    : Tests
-                refactor: Refactors
-                chore   : Chores
-                ci      : CI
-                style   : Code Style
-                revert  : Reverts
-              default-commit-type     : Other Changes
-              release-name-prefix     : ""
-              mention-authors         : true
-              mention-new-contributors: true
-              include-compare-link    : true
-              include-pr-links        : true
-              include-commit-links    : true
-              semver                  : true
-              use-github-autolink     : true
-      
-          - name: Get current date
-            id: date
-            run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      
-          - name: Create or update CHANGELOG.md
-            uses: DamianReeves/write-file-action@v1.0
-            with:
-              path: CHANGELOG.md
-              contents: |
-      
-                ## ${GITHUB_REF/refs\/heads\//} (${{ steps.date.outputs.date }})
-      
-                ${{ steps.changelog.outputs.changelog }}
-              write-mode: append
+              token: ${{ github.token }}
+              fromTag: ${{ github.ref_name }}
+              toTag: 1.0.0
+              writeToFile: true
 
           - name: Commit CHANGELOG.md
             uses: stefanzweifel/git-auto-commit-action@v4
