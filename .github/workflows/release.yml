@@ -42,18 +42,7 @@ jobs:
           write-mode: overwrite
 
       - name: Commit and push CHANGELOG.md
-        uses: EndBug/add-and-commit@v7
-        with:
-          add: CHANGELOG.md
-          message: "chore: Update CHANGELOG.md"
-          branch: main
-
-      - name: Commit updated CHANGELOG
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          branch: ${{ github.event.release.target_commitish }}
-          commit_message: Update CHANGELOG
-          file_pattern: CHANGELOG.md
+        uses: actions-go/push@v1
           
     build:
       name: Upload Release Asset
