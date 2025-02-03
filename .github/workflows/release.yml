@@ -30,7 +30,7 @@ jobs:
                  style   : Code Style
                  revert  : Reverts
               default-commit-type     : Other Changes
-              release-name            : ${GITHUB_REF/refs\/heads\//}
+              release-name            : ${{ github.ref_name }}
               release-name-prefix     : ""
               mention-authors         : true
               mention-new-contributors: true
