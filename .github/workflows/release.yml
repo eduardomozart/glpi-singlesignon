@@ -18,30 +18,14 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v2
 
-          - name: Create Changelog
-            uses: TriPSs/conventional-changelog-action@dd734f74fce61a6e02f821ee1b5930bc79a23534 # v5
+          - name: Update CHANGELOG
             id: changelog
+            uses: requarks/changelog-action@v1
             with:
-              github-token: ${{ secrets.github_token }}
-              git-message: "chore(release): update CHANGELOG.md for ${{ github.ref_name }} [skip ci]"
-              git-user-name: "github-actions[bot]"
-              git-user-email: "github-actions[bot]@users.noreply.github.com"
-              preset: 'angular'
-              tag-prefix: 'v'
-              output-file: 'CHANGELOG.md'
-              skip-on-empty: true
-              skip-version-file: true
-              skip-commit: false
-              skip-git-pull: false
-              git-branch: 'master'
-              create-summary: true
-
-          - name: Commit CHANGELOG.md
-            uses: stefanzweifel/git-auto-commit-action@v4
-            with:
-              branch: master
-              commit_message: 'docs: '
-              file_pattern: CHANGELOG.md
+              token: ${{ github.token }}
+              fromTag: ${{ github.ref_name }}
+              toTag: 1.0.0
+              writeToFile: true
           
     build:
       name: Upload Release Asset
