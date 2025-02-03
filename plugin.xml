@@ -95,7 +95,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
         <version>
             <num>1.3.4</num>
             <compatibility>~10.0.5</compatibility>
-            <download_url>https://github.com/eduardomozart/swcpuram/releases/download/1.3.4/glpi-singlesignon-1.3.4.tar.bz2</download>
+            <download_url>https://github.com/edgardmessias/glpi-singlesignon/releases/download/1.3.4/glpi-singlesignon-1.3.4.tar.bz2</download_url>
         </version>
     </versions>
     <langs>
