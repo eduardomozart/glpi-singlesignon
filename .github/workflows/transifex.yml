@@ -8,18 +8,51 @@ on:
       branches:
          - "*"
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
+   generatemo:
+    
+    name: Generate mo
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps: 
+    
+    - name: Checkout repo
+      uses: actions/checkout@v2 
+      
+    - name: msgfmt
+      # You may pin to the exact commit or the version.
+      # uses: whtsky/msgfmt-action@6b2181f051b002182d01a1e1f1aff216230c5a4d
+      uses: whtsky/msgfmt-action@20190305
+      
+    - name: Generate mo
+      run:  find . -type f -name "*.po" -exec msgfmt {} -o {}.mo \;
+
+    - name: Commit changes
+      uses: EndBug/add-and-commit@v5.1.0
+      with:
+        message: "Generate mo"
+        
+    - name: Push changes
+      uses: actions-go/push@v1
+      
    transifex:
       runs-on: ubuntu-latest
       steps:
+      
          - name: Transifex Commit
            uses: actions/checkout@v3
-      with:
-         repository: edgardmessias/glpi-singlesignon
-         ref: 'master'
-         token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
-    - name: setup git config
-      run: |
-         git config user.name "GitHub Actions Bot (Transifex)"
-         git config user.email "<>"
-    - run: git push origin master
+           with:
+              repository: edgardmessias/glpi-singlesignon
+              ref: 'master'
+              token: ${{ secrets.GITHUB_TOKEN }}
+            
+         - name: setup git config
+           run: |
+               git config user.name "GitHub Actions Bot (Transifex)"
+               git config user.email "<>"
+
+         - name: git push
+           run: git push origin master
