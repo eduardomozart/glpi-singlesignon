@@ -12,33 +12,15 @@ env:
 jobs:
     changelog:
       name: Update CHANGELOG.md
+      permissions:
+        contents: write
       runs-on: ubuntu-latest
       steps:
-         - uses: ardalanamini/auto-changelog@v4
-           with:
-              github-token            : ${{ github.token }}
-              commit-types            : |
-                 feat    : New Features
-                 fix     : Bug Fixes
-                 build   : Build System & Dependencies
-                 perf    : Performance Improvements
-                 docs    : Documentation
-                 test    : Tests
-                 refactor: Refactors
-                 chore   : Chores
-                 ci      : CI
-                 style   : Code Style
-                 revert  : Reverts
-              default-commit-type     : Other Changes
-              release-name            : ${{ github.ref_name }}
-              release-name-prefix     : ""
-              mention-authors         : true
-              mention-new-contributors: true
-              include-compare-link    : true
-              include-pr-links        : true
-              include-commit-links    : true
-              semver                  : true
-              use-github-autolink     : true
+      - name: Conventional Changelog Action
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v3.7.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           
     build:
       name: Upload Release Asset
