@@ -29,6 +29,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * To test, do logout and try login with links below login page `[ Login with <name> ]`
 
 # Available providers
+ * Azure - https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad
  * Facebook - https://developers.facebook.com/docs/apps/
  * GitHub - https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/
  * Google - https://developers.google.com/identity/protocols/OpenIDConnect
@@ -91,11 +92,18 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
             <compatibility>9.3</compatibility>
             <compatibility>9.4</compatibility>
         </version>
+        <version>
+            <num>1.3.4</num>
+            <compatibility>~10.0.5</compatibility>
+            <download_url>https://github.com/eduardomozart/swcpuram/releases/download/1.3.4/glpi-singlesignon-1.3.4.tar.bz2</download>
+        </version>
     </versions>
     <langs>
+        <lang>de_DE</lang>
         <lang>en_GB</lang>
+        <lang>es_ES</lang>
+        <lang>fr_FR</lang>
         <lang>pt_BR</lang>
-	<lang>de_DE</lang>
     </langs>
     <license><![CDATA[GPL v2+]]></license>
     <tags>
