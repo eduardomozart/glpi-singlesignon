@@ -16,6 +16,11 @@ jobs:
         contents: write
       runs-on: ubuntu-latest
       steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.target_commitish }}
+
       - name: Create CHANGELOG text
         id: changelog
         uses: loopwerk/tag-changelog@v1
