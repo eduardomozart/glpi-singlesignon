@@ -1,10 +1,9 @@
 name: Create release with tag
 
 on:
-    push:
-      # Sequence of patterns matched against refs/heads
-      branches:
-      - '*.*.*' # Push events to matching ex:20.15.10
+  release:
+    types:
+      - created
 
 env:
     TAG_VALUE: ${GITHUB_REF/refs\/heads\//}
@@ -18,12 +17,11 @@ jobs:
       steps:
       - name: Checkout repo
         uses: actions/checkout@v2 
-            
-      - name: Conventional Changelog Action
-        id: changelog
-        uses: TriPSs/conventional-changelog-action@v3.7.1
+
+      - name: "✏️ Generate release changelog"
+        uses: janheinrichmerker/action-github-changelog-generator@v2.3
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }} 
           
     build:
       name: Upload Release Asset
