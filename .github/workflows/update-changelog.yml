@@ -8,26 +8,31 @@ on:
 jobs:
   generate-changelog:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Install Conventional Changelog
-        run: npm install -g conventional-changelog-cli
-
-      - name: Generate Changelog
-        run: conventional-changelog -p angular -i CHANGELOG.md -s
-
-      - name: Commit Changelog
-        run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "GitHub Actions Bot (Update Changelog)"
-          git add CHANGELOG.md
-          git commit -m "chore(changelog): Update changelog"
-
-      - name: Push Changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: master
+    - uses: ardalanamini/auto-changelog@v4
+      id  : changelog
+      name: Changelog
+      with:
+        github-token            : ${{ github.token }}
+        commit-types            : |
+          feat    : New Features
+          fix     : Bug Fixes
+          build   : Build System & Dependencies
+          perf    : Performance Improvements
+          docs    : Documentation
+          test    : Tests
+          refactor: Refactors
+          chore   : Chores
+          ci      : CI
+          style   : Code Style
+          revert  : Reverts
+        default-commit-type     : Other Changes
+        release-name            : v1.0.0
+        release-name-prefix     : ""
+        mention-authors         : true
+        mention-new-contributors: true
+        include-compare-link    : true
+        include-pr-links        : true
+        include-commit-links    : true
+        semver                  : true
+        use-github-autolink     : true
