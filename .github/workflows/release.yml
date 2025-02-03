@@ -11,21 +11,28 @@ env:
 
 jobs:
     changelog:
-      name: Update CHANGELOG.md
+      name: Update Changelog
       permissions:
         contents: write
       runs-on: ubuntu-latest
       steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2 
-
-      - name: Build Changelog
-        id: github_release
-        uses: mikepenz/release-changelog-builder-action@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          mode: "COMMIT"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.release.target_commitish }}
+
+      - name: Update Changelog
+        uses: stefanzweifel/changelog-updater-action@v1
+        with:
+          latest-version: ${{ github.event.release.tag_name }}
+          release-notes: ${{ github.event.release.body }}
+
+      - name: Commit updated CHANGELOG
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: ${{ github.event.release.target_commitish }}
+          commit_message: Update CHANGELOG
+          file_pattern: CHANGELOG.md
           
     build:
       name: Upload Release Asset
