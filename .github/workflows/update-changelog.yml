@@ -37,8 +37,17 @@ jobs:
         semver                  : true
         use-github-autolink     : true
 
-    - name: Upload Changelog
-      uses: actions/upload-artifact@v4
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+    - name: Create or update changelog.md
+      uses: DamianReeves/write-file-action@v1.0
       with:
-        name: CHANGELOG.md
-        path: ${{ steps.changelog.outputs.changelog }}
+        path: changelog.md
+        contents: |
+
+          ## ${GITHUB_REF/refs\/heads\//} (${{ steps.date.outputs.date }})
+
+          ${{ steps.changelog.outputs.changelog }}
+        write-mode: append
