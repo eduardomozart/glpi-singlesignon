@@ -19,16 +19,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2 
 
-      - name: "✏️ Generate release changelog"
-        uses: janheinrichmerker/action-github-changelog-generator@v2.3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: "📤 Upload changelog"
-        uses: actions/upload-artifact@v4
-        with:
-          name: "Changelog"
-          path: CHANGELOG.md
+      - name: Build Changelog
+        id: github_release
+        uses: mikepenz/release-changelog-builder-action@v5
+          with:
+            mode: "COMMIT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
     build:
       name: Upload Release Asset
