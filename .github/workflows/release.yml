@@ -23,8 +23,8 @@ jobs:
               GITHUB_NAME: ${{ github.event.repository.name }}
               
              
-          run: sudo apt-get install libxml-xpath-perl;echo $(xpath -e '/root/versions/version[num="'${GITHUB_REF/refs\/heads\//}'"]/compatibility/text()' $GITHUB_NAME.xml);echo ::set-output name=version_glpi::$(xpath -e '/root/versions/version[num="'${GITHUB_REF/refs\/heads\//}'"]/compatibility/text()' $GITHUB_NAME.xml); rm -rf $GITHUB_NAME.xml tools wiki screenshots test .git .github ISSUE_TEMPLATE.md TODO.txt $GITHUB_NAME.png;cd ..; tar jcvf glpi-$GITHUB_NAME-${GITHUB_REF/refs\/heads\//}.tar.bz2 $GITHUB_NAME;ls -al;echo ::set-output name=tag::${GITHUB_REF/refs\/heads\//};echo ${{ steps.getxml.outputs.info }};
-         # run: rm -rf $GITHUB_NAME.xml tools wiki screenshots test ISSUE_TEMPLATE.md TODO.txt $GITHUB_NAME.png; tar -zcvf $GITHUB_NAME-$GITHUB_TAG.tar.gz $GITHUB_NAME
+          run: sudo apt-get install libxml-xpath-perl;echo $(xpath -e '/root/versions/version[num="'${GITHUB_REF/refs\/heads\//}'"]/compatibility/text()' plugin.xml);echo ::set-output name=version_glpi::$(xpath -e '/root/versions/version[num="'${GITHUB_REF/refs\/heads\//}'"]/compatibility/text()' plugin.xml); rm -rf plugin.xml tools wiki screenshots test .git .github ISSUE_TEMPLATE.md TODO.txt $GITHUB_NAME.png;cd ..; tar jcvf $GITHUB_NAME-${GITHUB_REF/refs\/heads\//}.tar.bz2 $GITHUB_NAME;ls -al;echo ::set-output name=tag::${GITHUB_REF/refs\/heads\//};echo ${{ steps.getxml.outputs.info }};
+         # run: rm -rf plugin.xml tools wiki screenshots test ISSUE_TEMPLATE.md TODO.txt $GITHUB_NAME.png; tar -zcvf $GITHUB_NAME-$GITHUB_TAG.tar.gz $GITHUB_NAME
         - name: Create Release
           id: create_release
           uses: actions/create-release@v1
@@ -45,6 +45,6 @@ jobs:
             GITHUB_NAME: ${{ github.event.repository.name }}
           with:
             upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-            asset_path: /home/runner/work/${{ github.event.repository.name }}/glpi-${{ github.event.repository.name }}-${{ steps.build_.outputs.tag }}.tar.bz2
-            asset_name: glpi-${{ github.event.repository.name }}-${{ steps.build_.outputs.tag }}.tar.bz2
+            asset_path: /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}-${{ steps.build_.outputs.tag }}.tar.bz2
+            asset_name: ${{ github.event.repository.name }}-${{ steps.build_.outputs.tag }}.tar.bz2
             asset_content_type: application/zip
