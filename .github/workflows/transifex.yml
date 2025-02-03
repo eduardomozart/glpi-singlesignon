@@ -13,6 +13,8 @@ jobs:
     name: Generate mo
     permissions: write-all
     runs-on: ubuntu-latest
+    env:
+       WORKDIR: "locales"
     steps: 
     
     - name: Checkout repo
@@ -21,11 +23,8 @@ jobs:
     - name: msgfmt
       # You may pin to the exact commit or the version.
       # uses: whtsky/msgfmt-action@6b2181f051b002182d01a1e1f1aff216230c5a4d
-      uses: whtsky/msgfmt-action@20190305
+      uses: whtsky/msgfmt-action@master
       
-    - name: Generate mo
-      run:  find . -name \*.po -execdir sh -c 'msgfmt "$0" -o `basename $0 .po`.mo' '{}' \;
-
     - name: Commit changes
       uses: EndBug/add-and-commit@v5.1.0
       with:
