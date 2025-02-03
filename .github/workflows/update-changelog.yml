@@ -1,0 +1,31 @@
+name: Generate Changelog
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  generate-changelog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Conventional Changelog
+        run: npm install -g conventional-changelog-cli
+
+      - name: Generate Changelog
+        run: conventional-changelog -p angular -i CHANGELOG.md -s
+
+      - name: Commit Changelog
+        run: |
+          git add CHANGELOG.md
+          git commit -m "chore(changelog): Update changelog"
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: master
