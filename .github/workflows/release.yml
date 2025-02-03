@@ -26,7 +26,13 @@ jobs:
               fromTag: ${{ github.ref_name }}
               toTag: 1.0.0
               writeToFile: true
-          
+
+          - name: Commit CHANGELOG.md
+            uses: stefanzweifel/git-auto-commit-action@v4
+            with:
+              branch: master
+              commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
+              file_pattern: CHANGELOG.md
     build:
       name: Upload Release Asset
       permissions: write-all
