@@ -10,6 +10,23 @@ env:
     TAG_VALUE: ${GITHUB_REF/refs\/heads\//}
 
 jobs:
+    changelog:
+      name: Update CHANGELOG.md
+      runs-on: ubuntu-latest
+      steps:
+        - name: Update CHANGELOG
+          id: changelog
+          uses: requarks/changelog-action@v1
+          with:
+            token: ${{ github.token }}
+            tag: ${{ github.ref_name }}
+        - name: Commit CHANGELOG.md
+          uses: stefanzweifel/git-auto-commit-action@v4
+          with:
+            branch: master
+            commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
+            file_pattern: CHANGELOG.md
+          
     build:
       name: Upload Release Asset
       permissions: write-all
