@@ -21,6 +21,8 @@ jobs:
 
       - name: Commit Changelog
         run: |
+          git config --global user.email "you@example.com"
+          git config --global user.name "GitHub Actions Bot (Update Changelog)"
           git add CHANGELOG.md
           git commit -m "chore(changelog): Update changelog"
 
