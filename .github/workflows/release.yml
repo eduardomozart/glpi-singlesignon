@@ -45,16 +45,23 @@ jobs:
             id: date
             run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       
-          - name: Create or update changelog.md
+          - name: Create or update CHANGELOG.md
             uses: DamianReeves/write-file-action@v1.0
             with:
-              path: changelog.md
+              path: CHANGELOG.md
               contents: |
       
                 ## ${GITHUB_REF/refs\/heads\//} (${{ steps.date.outputs.date }})
       
                 ${{ steps.changelog.outputs.changelog }}
               write-mode: append
+
+          - name: Commit CHANGELOG.md
+            uses: stefanzweifel/git-auto-commit-action@v4
+            with:
+              branch: master
+              commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
+              file_pattern: CHANGELOG.md
           
     build:
       name: Upload Release Asset
