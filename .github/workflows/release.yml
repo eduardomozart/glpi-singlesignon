@@ -17,14 +17,16 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v2
 
-          - name: Update CHANGELOG
+          - name: Create Changelog
+            uses: TriPSs/conventional-changelog-action@dd734f74fce61a6e02f821ee1b5930bc79a23534 # v5
             id: changelog
-            uses: requarks/changelog-action@v1
             with:
-              token: ${{ github.token }}
-              fromTag: ${{ github.ref_name }}
-              toTag: 1.0.0
-              writeToFile: true
+              github-token: ${{ github.token }}
+              git-user-name: "github-actions[bot]"
+              git-user-email: "github-actions[bot]@users.noreply.github.com"
+              skip-git-pull: false
+              output-file: true
+              create-summary: true
 
           - name: Commit CHANGELOG.md
             uses: stefanzweifel/git-auto-commit-action@v4
