@@ -8,6 +8,7 @@ on:
 
 env:
     TAG_VALUE: ${GITHUB_REF/refs\/heads\//}
+    PR_BRANCH: release-ci-${{ github.sha }}
 
 jobs:
     generate-changelog:
@@ -24,6 +25,7 @@ jobs:
               github-token: ${{ github.token }}
               git-user-name: "github-actions[bot]"
               git-user-email: "github-actions[bot]@users.noreply.github.com"
+              git-branch: ${{ env.PR_BRANCH }}
               skip-git-pull: false
               output-file: true
               create-summary: true
