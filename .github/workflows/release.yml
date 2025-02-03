@@ -18,16 +18,11 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v2
 
-          - name: Create tag
-            uses: actions/github-script@v5
+          - name: Tag snapshot
+            uses: tvdias/github-tagger@v0.0.1
             with:
-              script: |
-                github.rest.git.createRef({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  ref: 'refs/tags/${{ github.ref_name }}',
-                  sha: context.sha
-                })
+              repo-token: ${{ secrets.GITHUB_TOKEN }}
+              tag: ${{ github.ref_name }}
 
           - name: Update CHANGELOG
             id: changelog
