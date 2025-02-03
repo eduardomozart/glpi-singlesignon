@@ -8,7 +8,8 @@ on:
          - v[0-9]+.[0-9]+.[0-9]+
 
 jobs:
-  deploy:
+  changelog:
+    name: Update CHANGELOG.md
     runs-on: ubuntu-latest
 
     steps:
