@@ -54,7 +54,7 @@ jobs:
         destination_repo: 'edgardmessias/glpi-singlesignon'
         destination_folder: 'locales'
         destination_base_branch: 'master'
-        destination_head_branch: 'master'
+        destination_head_branch: 'transifex'
         user_email: ''
         user_name: 'GitHub Actions Bot (Transifex)'
         pull_request_reviewers: 'reviewers'
