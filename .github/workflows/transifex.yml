@@ -24,7 +24,7 @@ jobs:
       uses: whtsky/msgfmt-action@20190305
       
     - name: Generate mo
-      run:  cd locales && find . -type f -name "*.po" -exec msgfmt {} -o {}.mo \;
+      run:  find . -name \*.po -execdir sh -c 'msgfmt "$0" -o `basename $0 .po`.mo' '{}' \;
 
     - name: Commit changes
       uses: EndBug/add-and-commit@v5.1.0
