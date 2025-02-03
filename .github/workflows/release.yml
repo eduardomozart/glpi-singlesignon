@@ -14,18 +14,31 @@ jobs:
       name: Update CHANGELOG.md
       runs-on: ubuntu-latest
       steps:
-        - name: Update CHANGELOG
-          id: changelog
-          uses: requarks/changelog-action@v1
-          with:
-            token: ${{ github.token }}
-            tag: ${{ github.ref_name }}
-        - name: Commit CHANGELOG.md
-          uses: stefanzweifel/git-auto-commit-action@v4
-          with:
-            branch: master
-            commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
-            file_pattern: CHANGELOG.md
+         - uses: ardalanamini/auto-changelog@v4
+           with:
+              github-token            : ${{ github.token }}
+              commit-types            : |
+                 feat    : New Features
+                 fix     : Bug Fixes
+                 build   : Build System & Dependencies
+                 perf    : Performance Improvements
+                 docs    : Documentation
+                 test    : Tests
+                 refactor: Refactors
+                 chore   : Chores
+                 ci      : CI
+                 style   : Code Style
+                 revert  : Reverts
+              default-commit-type     : Other Changes
+              release-name            : ${GITHUB_REF/refs\/heads\//}
+              release-name-prefix     : ""
+              mention-authors         : true
+              mention-new-contributors: true
+              include-compare-link    : true
+              include-pr-links        : true
+              include-commit-links    : true
+              semver                  : true
+              use-github-autolink     : true
           
     build:
       name: Upload Release Asset
