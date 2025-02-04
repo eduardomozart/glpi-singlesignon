@@ -143,7 +143,7 @@ msgstr "O \"%s\" é um tipo inválido"
 
 #: inc/provider.class.php:352
 msgid "A Client ID is required"
-msgstr "O ID de cliente é obrigatório"
+msgstr "O ID de Cliente é obrigatório"
 
 #: inc/provider.class.php:356
 msgid "A Client Secret is required"
