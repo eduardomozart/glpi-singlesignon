@@ -106,7 +106,7 @@ msgstr "Dividir Domínio"
 
 #: inc/provider.class.php:180
 msgid "AuthorizedDomains"
-msgstr "Domínios autorizados"
+msgstr "Domínios Autorizados"
 
 #: inc/provider.class.php:182
 msgid ""
