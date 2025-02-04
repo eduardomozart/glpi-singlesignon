@@ -96,6 +96,11 @@ msgid ""
 "settings may vary by provider). You can specify additional parameters with "
 "the \"&\" delimiter."
 msgstr ""
+"Permite especificar parâmetros personalizados para a %1$s do provedor de "
+"SSO. Exemplo: %2$s para forçar o login ou %3$s para forçar a seleção de "
+"conta (as configurações de URL suportadas podem variar de acordo com o "
+"provedor). Você pode especificar parâmetros adicionais com o delimitador "
+"\"&\"."
 
 #: inc/provider.class.php:183 inc/provider.class.php:190
 #: inc/provider.class.php:541
