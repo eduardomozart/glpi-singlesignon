@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-04 19:54+0000\n"
+"POT-Creation-Date: 2025-02-04 20:06+0000\n"
 "PO-Revision-Date: 2025-02-04 19:31+0000\n"
 "Last-Translator: Eduardo Mozart de Oliveira <eduardomozart182@gmail.com>, 2025\n"
 "Language-Team: English (United Kingdom) (https://app.transifex.com/eduardomozart/teams/204814/en_GB/)\n"
@@ -129,7 +129,7 @@ msgstr "AuthorizedDomains"
 #: inc/provider.class.php:219
 msgid ""
 "Provide a list of domains allowed to log in through this provider (separated"
-" by commas, no spaces)."
+" by commas, no spaces) (optional)."
 msgstr ""
 
 #: inc/provider.class.php:225
