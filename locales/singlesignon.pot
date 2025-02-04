@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-04 20:06+0000\n"
+"POT-Creation-Date: 2025-02-04 20:28+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -56,160 +56,142 @@ msgstr ""
 msgid "Linked accounts"
 msgstr ""
 
-#: inc/provider.class.php:126
-msgid "JSON SSO provider representation"
-msgstr ""
-
-#: inc/provider.class.php:127
-msgid "Copy provider information"
-msgstr ""
-
-#: inc/provider.class.php:158
+#: inc/provider.class.php:125
 msgid "SSO Type"
 msgstr ""
 
-#: inc/provider.class.php:166 inc/provider.class.php:509
+#: inc/provider.class.php:133 inc/provider.class.php:472
 msgid "Client ID"
 msgstr ""
 
-#: inc/provider.class.php:168 inc/provider.class.php:517
+#: inc/provider.class.php:135 inc/provider.class.php:480
 msgid "Client Secret"
 msgstr ""
 
-#: inc/provider.class.php:179 inc/provider.class.php:525
+#: inc/provider.class.php:146 inc/provider.class.php:488
 msgid "Scope"
 msgstr ""
 
-#: inc/provider.class.php:181 inc/provider.class.php:533
+#: inc/provider.class.php:148 inc/provider.class.php:496
 msgid "Extra Options"
 msgstr ""
 
-#: inc/provider.class.php:183
-#, php-format
-msgid ""
-"Allows you to specify custom parameters for the SSO provider %1$s. Example: "
-"%2$s to force login or %3$s to force account selection (supported URL "
-"settings may vary by provider). You can specify additional parameters with "
-"the \"&\" delimiter."
-msgstr ""
-
-#: inc/provider.class.php:183 inc/provider.class.php:190
-#: inc/provider.class.php:541
+#: inc/provider.class.php:153 inc/provider.class.php:504
 msgid "Authorize URL"
 msgstr ""
 
-#: inc/provider.class.php:195 inc/provider.class.php:549
+#: inc/provider.class.php:158 inc/provider.class.php:512
 msgid "Access Token URL"
 msgstr ""
 
-#: inc/provider.class.php:200 inc/provider.class.php:557
+#: inc/provider.class.php:163 inc/provider.class.php:520
 msgid "Resource Owner Details URL"
 msgstr ""
 
-#: inc/provider.class.php:205
+#: inc/provider.class.php:168
 msgid "IsDefault"
 msgstr ""
 
-#: inc/provider.class.php:207
+#: inc/provider.class.php:170
 msgid "PopupAuth"
 msgstr ""
 
-#: inc/provider.class.php:213
+#: inc/provider.class.php:176
 msgid "SplitDomain"
 msgstr ""
 
-#: inc/provider.class.php:217
+#: inc/provider.class.php:180
 msgid "AuthorizedDomains"
 msgstr ""
 
-#: inc/provider.class.php:219
+#: inc/provider.class.php:182
 msgid ""
 "Provide a list of domains allowed to log in through this provider (separated "
-"by commas, no spaces) (optional)."
+"by commas, no spaces)."
 msgstr ""
 
-#: inc/provider.class.php:225
+#: inc/provider.class.php:188
 msgid "Use Email as Login"
 msgstr ""
 
-#: inc/provider.class.php:228
+#: inc/provider.class.php:191
 msgid "Split Name"
 msgstr ""
 
-#: inc/provider.class.php:316
+#: inc/provider.class.php:279
 msgid "Callback URL"
 msgstr ""
 
-#: inc/provider.class.php:320
+#: inc/provider.class.php:283
 msgid "Test Single Sign-on"
 msgstr ""
 
-#: inc/provider.class.php:379
+#: inc/provider.class.php:342
 msgid "A Name is required"
 msgstr ""
 
-#: inc/provider.class.php:385
+#: inc/provider.class.php:348
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr ""
 
-#: inc/provider.class.php:389
+#: inc/provider.class.php:352
 msgid "A Client ID is required"
 msgstr ""
 
-#: inc/provider.class.php:393
+#: inc/provider.class.php:356
 msgid "A Client Secret is required"
 msgstr ""
 
-#: inc/provider.class.php:398
+#: inc/provider.class.php:361
 msgid "An Authorize URL is required"
 msgstr ""
 
-#: inc/provider.class.php:400
+#: inc/provider.class.php:363
 msgid "The Authorize URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:404
+#: inc/provider.class.php:367
 msgid "An Access Token URL is required"
 msgstr ""
 
-#: inc/provider.class.php:406
+#: inc/provider.class.php:369
 msgid "The Access Token URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:410
+#: inc/provider.class.php:373
 msgid "A Resource Owner Details URL is required"
 msgstr ""
 
-#: inc/provider.class.php:412
+#: inc/provider.class.php:375
 msgid "The Resource Owner Details URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:634
+#: inc/provider.class.php:597
 msgid "Generic"
 msgstr ""
 
-#: inc/provider.class.php:635
+#: inc/provider.class.php:598
 msgid "Azure"
 msgstr ""
 
-#: inc/provider.class.php:636
+#: inc/provider.class.php:599
 msgid "Facebook"
 msgstr ""
 
-#: inc/provider.class.php:637
+#: inc/provider.class.php:600
 msgid "GitHub"
 msgstr ""
 
-#: inc/provider.class.php:638
+#: inc/provider.class.php:601
 msgid "Google"
 msgstr ""
 
-#: inc/provider.class.php:639
+#: inc/provider.class.php:602
 msgid "Instagram"
 msgstr ""
 
-#: inc/provider.class.php:640
+#: inc/provider.class.php:603
 msgid "LinkdeIn"
 msgstr ""
 
