@@ -8,42 +8,53 @@ on:
 
 env:
     TAG_VALUE: ${GITHUB_REF/refs\/heads\//}
+    PR_BRANCH: release-ci-${{ github.sha }}
 
 jobs:
-    changelog:
-      name: Update Changelog
-      permissions:
-        contents: write
+    generate-changelog:
+      name: Generate Changelog
       runs-on: ubuntu-latest
       steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.release.target_commitish }}
+          - name: Checkout code
+            uses: actions/checkout@v2
 
-      - name: Create CHANGELOG text
-        id: changelog
-        uses: loopwerk/tag-changelog@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          exclude_types: other,perf
+          - name: 🏷️ Create/update tag
+            uses: actions/github-script@v7
+            with:
+              script: |
+                github.rest.git.createRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: 'refs/tags/${{ github.ref_name }}',
+                  sha: context.sha
+                }).catch(err => {
+                  if (err.status !== 422) throw err;
+                })
 
-      - name: Read CHANGELOG.md
-        id: package
-        uses: juliangruber/read-file-action@v1
-        with:
-          path: ./CHANGELOG.md
+          - name: Update CHANGELOG
+            id: changelog
+            uses: requarks/changelog-action@v1
+            with:
+              token: ${{ github.token }}
+              tag: ${{ github.ref_name }}
+              writeToFile: true
+              #excludeTypes: build,docs,style
+              #includeInvalidCommits: true
 
-      - name: Write to CHANGELOG.md
-        uses: DamianReeves/write-file-action@master
-        with:
-          path: ./CHANGELOG.md
-          contents: ${{ steps.changelog.outputs.changelog }}${{ steps.package.outputs.content }}
-          write-mode: overwrite
+          - name: Commit CHANGELOG.md (master)
+            uses: stefanzweifel/git-auto-commit-action@v4
+            with:
+              branch: master
+              commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
+              file_pattern: CHANGELOG.md
 
-      - name: Commit and push CHANGELOG.md
-        uses: actions-go/push@v1
-          
+          - name: Commit CHANGELOG.md (branch)
+            uses: stefanzweifel/git-auto-commit-action@v4
+            with:
+              branch: ${{ github.ref_name }}
+              commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
+              file_pattern: CHANGELOG.md
+
     build:
       name: Upload Release Asset
       permissions: write-all
@@ -51,14 +62,14 @@ jobs:
       steps:
         - name: Checkout code
           uses: actions/checkout@v2
+          
         - name: Build project # This would actually build your project, using zip for an example artifact
           id: build_
           env:
               GITHUB_NAME: ${{ github.event.repository.name }}
-              
-             
           run: sudo apt-get install libxml-xpath-perl;echo $(xpath -e '/root/versions/version[num="'${GITHUB_REF/refs\/heads\/v/}'"]/compatibility/text()' plugin.xml);echo ::set-output name=version_glpi::$(xpath -e '/root/versions/version[num="'${GITHUB_REF/refs\/heads\/v/}'"]/compatibility/text()' plugin.xml); rm -rf plugin.xml tools wiki screenshots test .git .github ISSUE_TEMPLATE.md TODO.txt $GITHUB_NAME.png;cd ..; tar jcvf $GITHUB_NAME-${GITHUB_REF/refs\/heads\//}.tar.bz2 $GITHUB_NAME;ls -al;echo ::set-output name=tag::${GITHUB_REF/refs\/heads\//};echo ${{ steps.getxml.outputs.info }};
          # run: rm -rf plugin.xml tools wiki screenshots test ISSUE_TEMPLATE.md TODO.txt $GITHUB_NAME.png; tar -zcvf $GITHUB_NAME-$GITHUB_TAG.tar.gz $GITHUB_NAME
+
         - name: Create Release
           id: create_release
           uses: actions/create-release@v1
@@ -68,9 +79,10 @@ jobs:
             tag_name: ${{ steps.build_.outputs.tag }}
             release_name: | 
                       GLPI ${{ steps.build_.outputs.version_glpi }} : Version ${{ steps.build_.outputs.tag }} disponible / available
-            body : Version ${{ steps.build_.outputs.tag }} released for GLPI ${{ steps.build_.outputs.version_glpi }}. The [full changelog is available](https://github.com/edgardmessias/glpi-singlesignon/blob/${{ steps.build_.outputs.tag }}/CHANGELOG.md) for more details.
+            body : Version ${{ steps.build_.outputs.tag }} released for GLPI ${{ steps.build_.outputs.version_glpi }}. The [full changelog is available](https://github.com/edgardmessias/glpi-singlesignon/blob/master/CHANGELOG.md) for more details.
             draft: false
             prerelease: false
+
         - name: Upload Release Asset
           id: upload-release-asset 
           uses: actions/upload-release-asset@v1
