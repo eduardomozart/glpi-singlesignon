@@ -145,7 +145,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __sso('Scope') . "</td>";
       echo "<td><input type='text' style='width:96%' name='scope' value='" . $this->getScope() . "'></td>";
-      echo "<td>" . __sso('Extra Options') . "</td>";
+      echo "<td>" . __sso('Extra Options');
+      echo "&nbsp;";
+      Html::showToolTip(nl2br(sprintf(__sso('Allows you to specify custom parameters for the SSO provider %1$s. Example: %2$s to force login or %3$s to force account selection (supported URL settings may vary by provider). You can specify additional parameters with the "&" delimiter.'), '<strong>' . __sso('Authorize URL') . '</strong>', '<code>prompt=login</code>', '<code>prompt=select_account</code>')));
+      echo "</td>";
       echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "'></td>";
       echo "</tr>\n";
 
@@ -179,7 +182,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "</td>";
       echo "<td>" . __sso('AuthorizedDomains');
       echo "&nbsp;";
-      Html::showToolTip(nl2br(__sso('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces).')));
+      Html::showToolTip(nl2br(sprintf(__sso('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces). Example: %1$s'), '<code>example.com</code>')));
       echo "</td>";
       echo "<td><input type='text' style='width:96%' name='authorized_domains' value='" . $this->fields["authorized_domains"] . "'></td>";
       echo "</td></tr>\n";
