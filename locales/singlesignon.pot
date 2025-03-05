@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-05 14:56+0000\n"
+"POT-Creation-Date: 2025-03-05 16:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -60,138 +60,149 @@ msgstr ""
 msgid "SSO Type"
 msgstr ""
 
-#: inc/provider.class.php:133 inc/provider.class.php:472
+#: inc/provider.class.php:133 inc/provider.class.php:475
 msgid "Client ID"
 msgstr ""
 
-#: inc/provider.class.php:135 inc/provider.class.php:480
+#: inc/provider.class.php:135 inc/provider.class.php:483
 msgid "Client Secret"
 msgstr ""
 
-#: inc/provider.class.php:146 inc/provider.class.php:488
+#: inc/provider.class.php:146 inc/provider.class.php:491
 msgid "Scope"
 msgstr ""
 
-#: inc/provider.class.php:148 inc/provider.class.php:496
+#: inc/provider.class.php:148 inc/provider.class.php:499
 msgid "Extra Options"
 msgstr ""
 
-#: inc/provider.class.php:153 inc/provider.class.php:504
+#: inc/provider.class.php:150
+#, php-format
+msgid ""
+"Allows you to specify custom parameters for the SSO provider %1$s. Example: "
+"%2$s to force login or %3$s to force account selection (supported URL "
+"settings may vary by provider). You can specify additional parameters with "
+"the \"&\" delimiter."
+msgstr ""
+
+#: inc/provider.class.php:150 inc/provider.class.php:156
+#: inc/provider.class.php:507
 msgid "Authorize URL"
 msgstr ""
 
-#: inc/provider.class.php:158 inc/provider.class.php:512
+#: inc/provider.class.php:161 inc/provider.class.php:515
 msgid "Access Token URL"
 msgstr ""
 
-#: inc/provider.class.php:163 inc/provider.class.php:520
+#: inc/provider.class.php:166 inc/provider.class.php:523
 msgid "Resource Owner Details URL"
 msgstr ""
 
-#: inc/provider.class.php:168
+#: inc/provider.class.php:171
 msgid "IsDefault"
 msgstr ""
 
-#: inc/provider.class.php:170
+#: inc/provider.class.php:173
 msgid "PopupAuth"
 msgstr ""
 
-#: inc/provider.class.php:176
+#: inc/provider.class.php:179
 msgid "SplitDomain"
 msgstr ""
 
-#: inc/provider.class.php:180
+#: inc/provider.class.php:183
 msgid "AuthorizedDomains"
 msgstr ""
 
-#: inc/provider.class.php:182
+#: inc/provider.class.php:185
+#, php-format
 msgid ""
 "Provide a list of domains allowed to log in through this provider (separated "
-"by commas, no spaces)."
-msgstr ""
-
-#: inc/provider.class.php:188
-msgid "Use Email as Login"
+"by commas, no spaces). Example: %1$s"
 msgstr ""
 
 #: inc/provider.class.php:191
+msgid "Use Email as Login"
+msgstr ""
+
+#: inc/provider.class.php:194
 msgid "Split Name"
 msgstr ""
 
-#: inc/provider.class.php:279
+#: inc/provider.class.php:282
 msgid "Callback URL"
 msgstr ""
 
-#: inc/provider.class.php:283
+#: inc/provider.class.php:286
 msgid "Test Single Sign-on"
 msgstr ""
 
-#: inc/provider.class.php:342
+#: inc/provider.class.php:345
 msgid "A Name is required"
 msgstr ""
 
-#: inc/provider.class.php:348
+#: inc/provider.class.php:351
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr ""
 
-#: inc/provider.class.php:352
+#: inc/provider.class.php:355
 msgid "A Client ID is required"
 msgstr ""
 
-#: inc/provider.class.php:356
+#: inc/provider.class.php:359
 msgid "A Client Secret is required"
 msgstr ""
 
-#: inc/provider.class.php:361
+#: inc/provider.class.php:364
 msgid "An Authorize URL is required"
 msgstr ""
 
-#: inc/provider.class.php:363
+#: inc/provider.class.php:366
 msgid "The Authorize URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:367
+#: inc/provider.class.php:370
 msgid "An Access Token URL is required"
 msgstr ""
 
-#: inc/provider.class.php:369
+#: inc/provider.class.php:372
 msgid "The Access Token URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:373
+#: inc/provider.class.php:376
 msgid "A Resource Owner Details URL is required"
 msgstr ""
 
-#: inc/provider.class.php:375
+#: inc/provider.class.php:378
 msgid "The Resource Owner Details URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:597
+#: inc/provider.class.php:600
 msgid "Generic"
 msgstr ""
 
-#: inc/provider.class.php:598
+#: inc/provider.class.php:601
 msgid "Azure"
 msgstr ""
 
-#: inc/provider.class.php:599
+#: inc/provider.class.php:602
 msgid "Facebook"
 msgstr ""
 
-#: inc/provider.class.php:600
+#: inc/provider.class.php:603
 msgid "GitHub"
 msgstr ""
 
-#: inc/provider.class.php:601
+#: inc/provider.class.php:604
 msgid "Google"
 msgstr ""
 
-#: inc/provider.class.php:602
+#: inc/provider.class.php:605
 msgid "Instagram"
 msgstr ""
 
-#: inc/provider.class.php:603
+#: inc/provider.class.php:606
 msgid "LinkdeIn"
 msgstr ""
 
