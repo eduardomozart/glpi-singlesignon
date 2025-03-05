@@ -844,6 +844,22 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $fields['url_authorize'];
    }
 
+   public function getAuthorizedDomains() {
+      $type = $this->getClientType();
+
+      $value = static::getDefault($type, "authorized_domains");
+
+      $fields = $this->fields;
+
+      if (!isset($fields['authorized_domains']) || empty($fields['authorized_domains'])) {
+         $fields['authorized_domains'] = $value;
+      }
+
+      $fields = Plugin::doHookFunction("sso:authorized_domains", $fields);
+
+      return $fields['authorized_domains'];
+   }
+
    public function getAccessTokenUrl() {
       $type = $this->getClientType();
 
@@ -910,6 +926,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
             'approval_prompt' => 'auto',
             'redirect_uri' => PluginSinglesignonToolbox::getCurrentURL(),
          ];
+
+         $authorizedDomainsString = $this->getAuthorizedDomains();
+         if (isset($authorizedDomainsString)) {
+            $authorizedDomains = explode(',', $authorizedDomainsString);
+            if (count($authorizedDomains) == 1) {
+               $params['domain_hint'] = $authorizedDomains[0];
+            }
+         }
 
          $params = Plugin::doHookFunction("sso:authorize_params", $params);
 
@@ -1121,7 +1145,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $split = $this->fields['split_domain'];
-      $authorizedDomainsString = $this->fields['authorized_domains'];
+      $authorizedDomainsString = $this->getAuthorizedDomains();
       $authorizedDomains = [];
       if (isset($authorizedDomainsString)) {
          $authorizedDomains = explode(',', $authorizedDomainsString);
