@@ -76,6 +76,9 @@ function plugin_init_singlesignon() {
    $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
       'config'  => Provider::class,
    ];
+
+   // Make the picture.send.php page public again.
+   Firewall::addPluginStrategyForLegacyScripts('singlesignon', '#^/front/picture.send.php$#', Firewall::STRATEGY_NO_CHECK);
 }
 
 // Get the name and the version of the plugin - Needed
