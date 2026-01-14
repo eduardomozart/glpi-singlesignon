@@ -178,7 +178,7 @@ function plugin_singlesignon_install() {
       $DB->doQuery(
          "CREATE TABLE `$providersUsersTable` (
             `id` $default_key_sign INT NOT NULL AUTO_INCREMENT,
-            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
+            `plugin_singlesignon_providers_id` INT $default_key_sign NOT NULL DEFAULT '0',
             `users_id` INT $default_key_sign NOT NULL DEFAULT '0',
             `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
             PRIMARY KEY (`id`),
@@ -218,7 +218,7 @@ function plugin_singlesignon_install() {
    if (!$DB->tableExists($providersGroupsTable)) {
       $DB->doQuery(
          "CREATE TABLE `$providersGroupsTable` (
-            `id` $default_key_sign INT NOT NULL AUTO_INCREMENT,
+            `id` INT $default_key_sign NOT NULL AUTO_INCREMENT,
             `plugin_singlesignon_providers_id` INT $default_key_sign NOT NULL DEFAULT '0',
             `groups_id` INT $default_key_sign NOT NULL DEFAULT '0',
             `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

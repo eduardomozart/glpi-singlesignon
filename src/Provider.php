@@ -1210,7 +1210,7 @@ class Provider extends \CommonDBTM {
          }
 
          $groups_url = "https://graph.microsoft.com/v1.0/me/photo/memberOf";
-         $groups_req = \Toolbox::callCurl($photo_url, [
+         $groups_req = \Toolbox::callCurl($groups_url, [
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
             CURLOPT_SSL_VERIFYPEER => ($this->fields['ssl_verifypeer'] ?? true) ? 2 : 0,
@@ -1232,8 +1232,9 @@ class Provider extends \CommonDBTM {
                   $links = $link->find($condition);
                   // There's a valid link to the Azure AD group
                   if (!empty($links) && $first = reset($links)) {
-                     if($group->getFromDB($entry['id'])) {
-                        $group_id = $entry['id'];
+                     $id = $first['groups_id'];
+                     if($group->getFromDB($id)) {
+                        $group_id = $id;
                      }
                   }
                   // There's no link or link is broken
@@ -1599,6 +1600,7 @@ class Provider extends \CommonDBTM {
          // Create user groups on the entity which the SSO provider belongs
          // Groups should exist to be assigned through rules, that's the reason
          // we create them before executing the rule engine
+         $groups = $this->extractUserGroups($user);
          $this->assignGroupsToUser($user, $groups, $this->fields['entities_id']);
 
          // ℹ️ This will:
@@ -1698,7 +1700,7 @@ class Provider extends \CommonDBTM {
          return;
       }
 
-      $this->removeUserFromAllGroups($user);
+      $this->removeUserFromAllDynamicGroups($user);
 
       if (empty($groups)) {
          return;
@@ -1729,6 +1731,9 @@ class Provider extends \CommonDBTM {
             ], '', 1);
 
             if (!empty($found)) {
+               if ($this->debug) {
+                  print_r("Group found by name\n");
+               }
                $groupId = (int) array_key_first($found);
             }
          }
@@ -1746,6 +1751,9 @@ class Provider extends \CommonDBTM {
 
          if (!$groupId) {
             // Group creation failed -> skip safely
+            if ($this->debug) {
+               print_r("Failed to create group '$groupValue'\n");
+            }
             continue;
          }
 
@@ -1767,7 +1775,7 @@ class Provider extends \CommonDBTM {
       }
    }
 
-   protected function removeUserFromAllGroups(\User $user): void {
+   protected function removeUserFromAllDynamicGroups(\User $user): void {
 
       if (!$user->getID()) {
          return;
@@ -1776,7 +1784,8 @@ class Provider extends \CommonDBTM {
       $groupUser = new \Group_User();
 
       $links = $groupUser->find([
-         'users_id' => $user->getID()
+         'users_id' => $user->getID(),
+         'is_dynamic' => 1 // IMPORTANT (SSO-managed)
       ]);
 
       foreach ($links as $link) {
@@ -2018,7 +2027,5 @@ class Provider extends \CommonDBTM {
 
       $user->fields = $result;
       $user->willProcessRuleRight();
-
-      return true;
    }
 }
