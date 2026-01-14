@@ -1392,7 +1392,7 @@ class Provider extends \CommonDBTM {
          }
       }
 
-      if (!$user->getID()) {
+      if ($user->getID() > 0) {
          $remote_id = false;
          $remote_id_fields = ['id', 'username', 'sub'];
 
@@ -1483,7 +1483,7 @@ class Provider extends \CommonDBTM {
          }
       }
 
-      if (!$user->getID()) {
+      if ($user->getID() > 0) {
          if ($login && $user->getFromDBbyName($login)) {
             if ($this->debug) {
                print_r("User found by login name\n");
@@ -1491,7 +1491,7 @@ class Provider extends \CommonDBTM {
          }
       }
 
-      if (!$user->getID()) {
+      if ($user->getID() > 0) {
          $default_condition = '';
 
          if (version_compare(GLPI_VERSION, '9.3', '>=')) {
@@ -1509,7 +1509,7 @@ class Provider extends \CommonDBTM {
       // If the provider is google
       if (static::getClientType() == "google") {
          if ($this->debug) {
-            print_r("\nAttempting to " . (!$user->getID() ? "create" : "update") . " user for Google provider\n");
+            print_r("\nAttempting to " . ($user->getID() > 0 ? "create" : "update") . " user for Google provider\n");
          }
          // Generates an api token and a personal token... probably not necessary
          $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
@@ -1540,7 +1540,7 @@ class Provider extends \CommonDBTM {
       // If the provider is generic (Ex: azure ad without common tenant)
       if (static::getClientType() == "generic") {
          if ($this->debug) {
-            print_r("\nAttempting to " . (!$user->getID() ? "create" : "update") . " user for Generic provider\n");
+            print_r("\nAttempting to " . ($user->getID() > 0 ? "create" : "update") . " user for Generic provider\n");
          }
          $splitname = $this->fields['split_name'];
          $firstname = '';
@@ -1584,7 +1584,7 @@ class Provider extends \CommonDBTM {
       }
 
       try {
-         if (!$user->getID()) {
+         if ($user->getID() > 0) {
             // Generates an api token and a personal token... probably not necessary
             $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
             $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
@@ -1756,7 +1756,7 @@ class Provider extends \CommonDBTM {
    }
 
    protected function assignGroupsToUser(\User $user, array $groups, int $entities_id = 0): void {
-      if (!$user->getID()) {
+      if ($user->getID() > 0) {
          return;
       }
 
@@ -1835,7 +1835,7 @@ class Provider extends \CommonDBTM {
    }
 
    protected function removeUserFromAllDynamicGroups(\User $user): void {
-      if (!$user->getID()) {
+      if ($user->getID() > 0) {
          return;
       }
 
