@@ -1674,7 +1674,7 @@ class Provider extends \CommonDBTM {
          // - assign groups
          // - set recursion
          // Exactly like LDAP.
-         $user->reapplyRightRules();
+         // $user->reapplyRightRules();
 
          // No profile assigned through rules = user cannot login
          $profiles = \Profile_User::getUserProfiles($user->getID());
