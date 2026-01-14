@@ -1842,11 +1842,19 @@ class Provider extends \CommonDBTM {
          }
 
          // Assign group
-         $groupUser->add([
+         $linkResult = $groupUser->add([
             'users_id'    => $user->getID(),
             'groups_id'   => $groupId,
             'is_dynamic'  => 1 // IMPORTANT (SSO-managed)
          ]);
+
+         if ($this->debug) {
+            if ($linkResult) {
+               print_r("\Linked GroupId #{$groupId} to UserId #{$user->getID()}\n");
+            } else {
+               print_r("\nFailed to link GroupId #{$groupId} to UserId #{$user->getID()}\n");
+            }
+         }
       }
    }
 
@@ -1865,28 +1873,37 @@ class Provider extends \CommonDBTM {
 
       foreach ($links as $link) {
          // Remove user from the group
-         $groupUser->delete(['id' => $link['id']], true);
+         $groups_id = $link->field['groups_id'];
+         $users_id = $link->field['users_id'];
+         $unlinkResult = $groupUser->delete(['id' => $link['id']], true);
+         if ($this->debug) {
+            if ($unlinkResult) {
+               print_r("\nUnlinked GroupId #{$groups_id} from UserId #{$users_id}\n");
+            } else {
+               print_r("\nFailed to unlink GroupId #{$groups_id} from UserId #{$users_id}\n");
+            }
+         }
       }
    }
 
    public function login() {
       $user = $this->findUser();
 
-      if (!$user) {
-         if ($this->debug) {
-            print_r("User has not been found");
-         }
-         return false;
-      }
-
       // Create fake auth
       // phpcs:disable
-      $auth = new Auth();
-      $auth->user = $user;
-      $auth->auth_succeded = true;
+      $auth = new \Auth();
+
+      if (!$user) {
+         $auth->auth_succeded = false;
+         $auth->user_present = false;
+      }
+      if (is_object($user)) {
+         $auth->user = $user;
+         $auth->auth_succeded = true;
+         $auth->user_present = true;
+         $auth->user->fields['authtype'] = \Auth::DB_GLPI;
+      }
       $auth->extauth = 1;
-      $auth->user_present = 1;
-      $auth->user->fields['authtype'] = \Auth::DB_GLPI;
 
       $authResult = \Session::init($auth);
       if ($this->debug) {
@@ -1899,7 +1916,7 @@ class Provider extends \CommonDBTM {
       // phpcs:enable
    }
 
-   public function linkUser($user_id) {
+   public function linkUser(int $user_id) {
       $user = new \User();
 
       if (!$user->getFromDB($user_id)) {
@@ -1972,9 +1989,20 @@ class Provider extends \CommonDBTM {
     *
     * @return string|boolean Filename to be stored in user picture field, false if no picture found
     */
-   public function syncOAuthPhoto($user) : bool {
+   public function syncOAuthPhoto(\User $user) : bool {
+      if ($this->debug) {
+         print_r("\nsyncOAuthPhoto (UserId {$user->getId()}):\n");
+      }
+
+      if ($user->getID() == -1) {
+         return false;
+      }
+
       $token = $this->getAccessToken();
       if (!$token) {
+         if ($this->debug) {
+            print_r("\nFailed to get access token\n");
+         }
          return false;
       }
 
@@ -1986,12 +2014,12 @@ class Provider extends \CommonDBTM {
 
       $headers = \Plugin::doHookFunction("sso:resource_owner_picture", $headers);
 
-      if ($this->debug) {
-         print_r("\nsyncOAuthPhoto:\n");
-      }
-
       //get picture content (base64) in Azure
       if (preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url)) {
+         if ($this->debug) {
+            print_r("Update profile photo for Azure AD provider");
+         }
+
          array_push($headers, "Content-Type:image/jpeg; charset=utf-8");
 
          $photo_url = "https://graph.microsoft.com/v1.0/me/photo/\$value";
@@ -2044,9 +2072,21 @@ class Provider extends \CommonDBTM {
                   ]);
                }
 
-               if ($success) {
-                  return true;
+               if (!$success) {
+                  print_r("Picture DB update failed");
                }
+               return $success;
+            } else {
+               //no update
+               if ($this->debug) {
+                  print_r("No profile photo update is needed");
+                  var_dump(true);
+               }
+               return true;
+            }
+         } else {
+            if ($this->debug) {
+               print_r("img is empty");
             }
          }
       }
