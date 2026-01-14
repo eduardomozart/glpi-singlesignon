@@ -1940,17 +1940,27 @@ class Provider extends \CommonDBTM {
    public function linkGroup($group_id, $remote_id) {
       $link = new \PluginSinglesignonProvider_Group();
 
-      // Unlink from another user
+      // Unlink from another group
       $link->deleteByCriteria([
          'plugin_singlesignon_providers_id' => $this->fields['id'],
          'remote_id' => $remote_id,
       ]);
 
-      return $link->add([
+      $result = $link->add([
          'plugin_singlesignon_providers_id' => $this->fields['id'],
          'groups_id' => $group_id,
          'remote_id' => $remote_id,
       ]);
+
+      if ($this->debug) {
+         if ($result) {
+            print_r("\nUser #{$user->getID()} linked to group: '" . $remote_id . "'\n");
+         } else {
+            print_r("\nFailed to link User #{$user->getID()} to group: '" . $remote_id . "'\n");
+         }
+      }
+
+      return $result;
    }
 
    /**
