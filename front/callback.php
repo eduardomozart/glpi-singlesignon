@@ -93,7 +93,8 @@ if ($existing_user_id) {
 
 $REDIRECT = "";
 
-if ($user_id || $signon_provider->login()) {
+$auth = $signon_provider->login();
+if ($user_id || $auth->auth_succeded) {
 
    $user_id = $user_id ?: Session::getLoginUserID();
 
@@ -149,7 +150,7 @@ if ($user_id || $signon_provider->login()) {
 
 // we have done at least a good login? No, we exit.
 Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
-echo '<div class="center b">' . __('User not authorized to connect in GLPI') . '<br><br>';
+echo '<div class="center b">' . implode('<br>', $auth->getErrors()) . '<br><br>';
 // Logout whit noAUto to manage auto_login with errors
 echo '<a href="' . PluginSinglesignonToolbox::getBaseURL() . '/front/logout.php?noAUTO=1' .
 str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';

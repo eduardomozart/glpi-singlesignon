@@ -1905,7 +1905,7 @@ class Provider extends \CommonDBTM {
       // Rollback password change
       $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
 
-      return $authResult;
+      return $auth;
    }
 
    public function linkUser($user_id) {
