@@ -1596,6 +1596,10 @@ class Provider extends \CommonDBTM {
                'personal_token' => $tokenPersonnel,
             ]);
 
+            if ($this->debug) {
+               print_r("Calling Useradd with parameters: ");
+               var_dump($userPost);
+            }
             //$user->check(-1, CREATE, $userPost);
             $newID = $user->add($userPost);
             // var_dump($newID);
