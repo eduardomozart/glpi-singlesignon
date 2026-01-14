@@ -1663,6 +1663,8 @@ class Provider extends \CommonDBTM {
          $groups = $this->extractUserGroups($resource_array);
          $this->assignGroupsToUser($user, $groups, $this->fields['entities_id']);
 
+         $this->syncOAuthPhoto($user);
+
          // ℹ️ This will:
          // - assign entity
          // - assign profile
@@ -1865,8 +1867,6 @@ class Provider extends \CommonDBTM {
       if (!$user) {
          return false;
       }
-
-      $this->syncOAuthPhoto($user);
 
       // Create fake auth
       // phpcs:disable
