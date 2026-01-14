@@ -1671,59 +1671,60 @@ class Provider extends \CommonDBTM {
          // Exactly like LDAP.
          $user->reapplyRightRules();
 
-         // No profile = user cannot login
+         // No profile assigned through rules = user cannot login
          $profiles = \Profile_User::getUserProfiles($user->getID());
          // Verification default profiles exist in the entity
          // If no default profile exists, the user will not be able to log in.
          // In this case, we retrieve a profile and an entity and assign these values ​​to it.
          // The administrator can change these values ​​later.
-         if (empty($profiles) && 0 == \Profile::getDefault()) {
-            if ($this->debug) {
-               print_r("\nNo default profile found, assigning first available profile\n");
-            }
-            // No default profiles
-            // Profile recovery and assignment
-            global $DB;
-            $datasProfiles = [];
-            foreach ($DB->request('glpi_profiles') as $data) {
-               array_push($datasProfiles, $data);
-            }
-            /* $datasEntities = [];
-            foreach ($DB->request('glpi_entities') as $data) {
-               array_push($datasEntities, $data);
-            } */
-
-            if ($this->debug) {
-               print_r("Available profiles: " . count($datasProfiles) . "\n");
-               print_r("Available entities: " . count($datasEntities) . "\n");
-            }
-
-            if (count($datasProfiles) > 0) {
-               $profils = $datasProfiles[0]['id'];
-               $entitie = $this->fields['entities_id'];
+         if (empty($profiles)) {
+            $profils = \Profile::getDefault();
+            if (!$profils) {
+               if ($this->debug) {
+                  print_r("\nNo default profile found, assigning first available profile\n");
+               }
+               // No default profiles
+               // Profile recovery and assignment
+               global $DB;
+               $datasProfiles = [];
+               foreach ($DB->request('glpi_profiles') as $data) {
+                  array_push($datasProfiles, $data);
+               }
+               /* $datasEntities = [];
+               foreach ($DB->request('glpi_entities') as $data) {
+                  array_push($datasEntities, $data);
+               } */
 
                if ($this->debug) {
-                  print_r("Assigning profile ID: $profils, entity ID: $entitie\n");
+                  print_r("Available profiles: " . count($datasProfiles) . "\n");
+                  // print_r("Available entities: " . count($datasEntities) . "\n");
                }
 
-               $profile   = new \Profile_User();
-               $userProfile['users_id'] = intval($user->fields['id']);
-               $userProfile['entities_id'] = intval($entitie);
-               $userProfile['is_recursive'] = 0; // Sub-entities
-               $userProfile['profiles_id'] = intval($profils);
-               $userProfile['add'] = "Ajouter";
-               $profileResult = $profile->add($userProfile);
+               if (count($datasProfiles) > 0) {
+                  $profils = $datasProfiles[0]['id'];
+               }
+            }
+            $entitie = $this->fields['entities_id'];
 
+            if ($this->debug) {
+               print_r("Assigning profile ID: $profils, entity ID: $entitie\n");
+            }
+            $profile   = new \Profile_User();
+            $userProfile['users_id'] = intval($user->fields['id']);
+            $userProfile['entities_id'] = intval($entitie);
+            $userProfile['is_recursive'] = 0; // Sub-entities
+            $userProfile['profiles_id'] = intval($profils);
+            $userProfile['add'] = "Ajouter";
+            $profileResult = $profile->add($userProfile);
+            if ($this->debug) {
+               print_r("Profile assignment result: ");
+               var_dump($profileResult);
+            }
+            if (!$profileResult) {
                if ($this->debug) {
-                  print_r("Profile assignment result: ");
-                  var_dump($profileResult);
+                  print_r("Profile assignment failed!\n");
                }
-               if (!$profileResult) {
-                  if ($this->debug) {
-                     print_r("Profile assignment failed!\n");
-                  }
-                  return false;
-               }
+               return false;
             } else {
                if ($this->debug) {
                   print_r("No profiles or entities available!\n");
@@ -1732,7 +1733,7 @@ class Provider extends \CommonDBTM {
             }
          } else {
             if ($this->debug) {
-               print_r("\nDefault profile exists, will be assigned automatically\n");
+               print_r("\nUser already has a profile assigned\n");
             }
          }
 
