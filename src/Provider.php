@@ -1244,6 +1244,11 @@ class Provider extends \CommonDBTM {
                         if (!empty($links) && $first = reset($links)) {
                            $id = $first['groups_id'];
                            if($group->getFromDB($id)) {
+                              if (!empty($entry['displayName']) && $group->fields['name'] !== $entry['displayName']) {
+                                 $group->update([
+                                    'name'    => $entry['displayName']
+                                 ]);
+                              }
                               $group_id = $id;
                            }
                         }
@@ -1944,7 +1949,7 @@ class Provider extends \CommonDBTM {
       if (preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url)) {
          array_push($headers, "Content-Type:image/jpeg; charset=utf-8");
 
-         $photo_url = "https://graph.microsoft.com/beta/me/photo/\$value";
+         $photo_url = "https://graph.microsoft.com/v1.0/me/photo/\$value";
          $img = \Toolbox::callCurl($photo_url, [
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
