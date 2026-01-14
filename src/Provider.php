@@ -1509,7 +1509,7 @@ class Provider extends \CommonDBTM {
       // If the provider is google
       if (static::getClientType() == "google") {
          if ($this->debug) {
-            print_r("\nAttempting to create/update user for Google provider\n");
+            print_r("\nAttempting to " . (!$user->getID() ? "create" : "update") . " user for Google provider\n");
          }
          // Generates an api token and a personal token... probably not necessary
          $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
@@ -1540,7 +1540,7 @@ class Provider extends \CommonDBTM {
       // If the provider is generic (Ex: azure ad without common tenant)
       if (static::getClientType() == "generic") {
          if ($this->debug) {
-            print_r("\nAttempting to create/update user for Generic provider\n");
+            print_r("\nAttempting to " . (!$user->getID() ? "create" : "update") . " user for Generic provider\n");
          }
          $splitname = $this->fields['split_name'];
          $firstname = '';
@@ -1600,7 +1600,11 @@ class Provider extends \CommonDBTM {
             $newID = $user->add($userPost);
             // var_dump($newID);
 
-            if (!$newID) {
+            if ($newID) {
+               if ($this->debug) {
+                  print_r("\nUser {$newID} created!\n");
+               }
+            } else {
                if ($this->debug) {
                   print_r("\nUser creation failed!\n");
                }
@@ -1615,6 +1619,9 @@ class Provider extends \CommonDBTM {
             // This is intentional.
             $user->getFromDB($newID);
          } else {
+            if ($this->debug) {
+               print_r("\nUser {$user->getID()} updated!\n");
+            }
             $user->update($userPost);
          }
 
