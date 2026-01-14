@@ -1688,7 +1688,7 @@ class Provider extends \CommonDBTM {
          // The administrator can change these values ​​later.
          if (empty($profiles)) {
             $profils = \Profile::getDefault();
-            if (!$profils) {
+            if (0 == \Profile::getDefault()) {
                if ($this->debug) {
                   print_r("\nNo default profile found, assigning first available profile\n");
                }
@@ -1738,6 +1738,7 @@ class Provider extends \CommonDBTM {
             if (!$profileResult) {
                if ($this->debug) {
                   print_r("Profile assignment failed!\n");
+                  print_r($userProfile);
                }
                return false;
             }
