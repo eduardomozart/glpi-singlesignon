@@ -2054,26 +2054,16 @@ class Provider extends \CommonDBTM {
                }
 
                if (!$success) {
-                  if ($this->debug) {
-                     print_r(false);
-                  }
                   return false;
                }
+            }
 
-               if ($this->debug) {
-                  print_r("{$sub}/{$filename}.jpg");
-               }
-               return "{$sub}/{$filename}.jpg";
-            }
-            if ($this->debug) {
-               print_r($user->fields["picture"]);
-            }
             return $user->fields["picture"];
          }
       }
 
       if ($this->debug) {
-         print_r(false);
+         var_dump(false);
       }
       return false;
    }
