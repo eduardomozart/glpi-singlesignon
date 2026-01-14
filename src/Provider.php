@@ -1809,8 +1809,6 @@ class Provider extends \CommonDBTM {
    }
 
    protected function removeUserFromAllDynamicGroups(\User $user): void {
-      global $DB;
-
       if (!$user->getID()) {
          return;
       }
@@ -1824,48 +1822,8 @@ class Provider extends \CommonDBTM {
       ]);
 
       foreach ($links as $link) {
-         // Get group_id from the link
-         $group_id = (int) $link['groups_id'];
-
          // Remove user from the group
          $groupUser->delete(['id' => $link['id']], true);
-
-         // Check if group still has linked items
-         $query = "
-            SELECT 
-               g.id,
-               g.name,
-               (
-                     (SELECT COUNT(*) FROM glpi_groups_users WHERE groups_id = g.id) +
-                     (SELECT COUNT(*) FROM glpi_groups_tickets WHERE groups_id = g.id) +
-                     (SELECT COUNT(*) FROM glpi_groups_items WHERE groups_id = g.id) +
-                     (SELECT COUNT(*) FROM glpi_groups_problems WHERE groups_id = g.id) +
-                     (SELECT COUNT(*) FROM glpi_groups_knowbaseitems WHERE groups_id = g.id) +
-                     (SELECT COUNT(*) FROM glpi_groups_reminders WHERE groups_id = g.id) +
-                     (SELECT COUNT(*) FROM glpi_groups_rssfeeds WHERE groups_id = g.id)
-               ) AS total_references
-            FROM 
-               glpi_groups g
-            ORDER BY 
-               total_references DESC
-         ";
-
-         // Execute the query
-         $result = $DB->query($query);
-
-         // Check if query was successful
-         if ($result) {
-            // Purge group if possible (no linked items)
-            while ($data = $DB->fetch_assoc($result)) {
-               $has_linked_items = $data['total_references'] > 0;
-               if (!$has_linked_items) {
-                  $group->delete([
-                     'id'    => $group_id,
-                     'force' => true
-                  ]);
-               }
-            }
-         }
       }
    }
 
