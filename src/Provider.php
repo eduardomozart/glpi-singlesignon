@@ -1388,7 +1388,7 @@ class Provider extends \CommonDBTM {
 
       if (is_numeric($id) && $user->getFromDB($id)) {
          if ($this->debug) {
-            print_r("User found by ID\n");
+            print_r("User found by ID (#{$id})\n");
          }
       }
 
@@ -1417,7 +1417,7 @@ class Provider extends \CommonDBTM {
 
          if (is_numeric($id) && $user->getFromDB($id)) {
             if ($this->debug) {
-               print_r("User found by remote ID\n");
+               print_r("User found by remote ID ({$remote_id})\n");
             }
          }
       }
@@ -1486,7 +1486,7 @@ class Provider extends \CommonDBTM {
       if ($user->getID() == -1) {
          if ($login && $user->getFromDBbyName($login)) {
             if ($this->debug) {
-               print_r("User found by login name\n");
+               print_r("User found by login name ({$login})\n");
             }
          }
       }
@@ -1499,7 +1499,7 @@ class Provider extends \CommonDBTM {
          }
 
          if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
-            print_r("User found by email\n");
+            print_r("User found by email ({$email})\n");
          }
       }
 
@@ -1706,6 +1706,11 @@ class Provider extends \CommonDBTM {
 
                if (count($datasProfiles) > 0) {
                   $profils = $datasProfiles[0]['id'];
+               } else {
+                  if ($this->debug) {
+                     print_r("No profiles or entities available!\n");
+                  }
+                  return false;
                }
             }
             $entitie = $this->fields['entities_id'];
@@ -1730,15 +1735,10 @@ class Provider extends \CommonDBTM {
                   print_r("Profile assignment failed!\n");
                }
                return false;
-            } else {
-               if ($this->debug) {
-                  print_r("No profiles or entities available!\n");
-               }
-               return false;
             }
          } else {
             if ($this->debug) {
-               print_r("\nUser already has a profile assigned\n");
+               print_r("\nUser #{$user->getID()} already has a profile assigned\n");
             }
          }
 
