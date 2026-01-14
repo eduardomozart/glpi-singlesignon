@@ -1609,6 +1609,7 @@ class Provider extends \CommonDBTM {
                if ($this->debug) {
                   print_r("\nUser creation failed!\n");
                }
+               return false;
             }
 
             // ⚠️ At this point:
@@ -1617,7 +1618,7 @@ class Provider extends \CommonDBTM {
             // - no entity yet
             // - cannot login yet
             // This is intentional.
-
+            $user->getFromDB($newID);
          } else {
             $user->update($userPost);
          }
