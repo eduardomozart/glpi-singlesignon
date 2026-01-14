@@ -1778,6 +1778,7 @@ class Provider extends \CommonDBTM {
       $groupUser = new \Group_User();
       $group     = new \Group();
 
+      $keepDynGroupIds = [];
       // Get current user groupsIds
       $curDynGroupIds = [];
       $links = $groupUser->find([
