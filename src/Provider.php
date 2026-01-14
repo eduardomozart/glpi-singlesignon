@@ -1261,6 +1261,7 @@ class Provider extends \CommonDBTM {
                               'comment'     => \__sso('Created automatically by Single Sign-On'),
                               'add'         => 1
                            ]);
+                           $this->linkGroup($group_id, $entry['id']);
                         }
                         if ($group_id) {
                            $groups[] = $group_id;
