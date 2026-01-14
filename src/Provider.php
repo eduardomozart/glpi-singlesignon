@@ -1003,10 +1003,10 @@ class Provider extends \CommonDBTM {
          } elseif (isset($_GET['redirect'])) {
             $_SESSION['glpi_singlesignon_redirect'] = $_GET['redirect'];
          }
-         
+
          // Build the callback URL for OAuth redirect
          $callback_url = Toolbox::getBaseURL() . Toolbox::getCallbackUrl($this->fields['id']);
-         
+
          $params = [
             'client_id' => $this->getClientId(),
             'scope' => $this->getScope(),
@@ -1059,7 +1059,7 @@ class Provider extends \CommonDBTM {
 
       // Build the callback URL for OAuth redirect (must match the one sent in authorization request)
       $callback_url = Toolbox::getBaseURL() . Toolbox::getCallbackUrl($this->fields['id']);
-      
+
       $params = [
          'client_id' => $this->getClientId(),
          'client_secret' => $this->getClientSecret(),
@@ -1418,7 +1418,7 @@ class Provider extends \CommonDBTM {
             }
          }
       }
-      
+
       $split = $this->fields['split_domain'];
       $authorizedDomainsString = $this->fields['authorized_domains'];
       $authorizedDomains = [];
@@ -1699,7 +1699,7 @@ class Provider extends \CommonDBTM {
                   print_r("No profiles or entities available!\n");
                }
                return false;
-            } 
+            }
          } else {
             if ($this->debug) {
                print_r("\nDefault profile exists, will be assigned automatically\n");
