@@ -1898,7 +1898,8 @@ class Provider extends \CommonDBTM {
       $auth = new \Auth();
       $authResult = $auth->login($user->fields['name'], $tempPassword);
       if ($this->debug) {
-         print_r("Auth result: " . $authResult);
+         print_r("Auth result: ");
+         var_dump($authResult);
       }
 
       // Rollback password change
