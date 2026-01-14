@@ -1865,6 +1865,9 @@ class Provider extends \CommonDBTM {
       $user = $this->findUser();
 
       if (!$user) {
+         if ($this->debug) {
+            print_r("User does not exist");
+         }
          return false;
       }
 
@@ -1894,6 +1897,9 @@ class Provider extends \CommonDBTM {
       // Log-in using the generated password as if you were logging in using the login form
       $auth = new \Auth();
       $authResult = $auth->login($user->fields['name'], $tempPassword);
+      if ($this->debug) {
+         print_r("Auth result: " . $authResult);
+      }
 
       // Rollback password change
       $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
