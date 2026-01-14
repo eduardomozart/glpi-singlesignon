@@ -1247,7 +1247,7 @@ class Provider extends \CommonDBTM {
                               $group_id = $id;
                            }
                         }
-                        // There's no link or link is broken
+                        // displayName may return empty if missing 'GroupMember.Read.All' permission
                         if (!$group_id && !empty($entry['displayName'])) {
                            $group_id = $group->add([
                               'name'        => $entry['displayName'],
@@ -1366,7 +1366,7 @@ class Provider extends \CommonDBTM {
 
    public function findUser() {
       global $DB;
-      
+
       $resource_array = $this->getResourceOwner();
 
       if (!$resource_array) {
@@ -1944,7 +1944,7 @@ class Provider extends \CommonDBTM {
       if (preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url)) {
          array_push($headers, "Content-Type:image/jpeg; charset=utf-8");
 
-         $photo_url = "https://graph.microsoft.com/v1.0/me/photo/\$value";
+         $photo_url = "https://graph.microsoft.com/beta/me/photo/\$value";
          $img = \Toolbox::callCurl($photo_url, [
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
