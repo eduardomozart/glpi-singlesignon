@@ -1588,7 +1588,7 @@ class Provider extends \CommonDBTM {
             // Generates an api token and a personal token... probably not necessary
             $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
             $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
-            array_push($userPost, [
+            array_merge($userPost, [
                'add' => 1,
                'password' => '',
                'api_token' => $tokenAPI,
