@@ -1628,21 +1628,13 @@ class Provider extends \CommonDBTM {
          $groups = $this->extractUserGroups($resource_array);
          $this->assignGroupsToUser($user, $groups, $this->fields['entities_id']);
 
-         // Set a random password for the current user
-         $tempPassword = bin2hex(random_bytes(64));
-         $DB->update('glpi_users', ['password' => \Auth::getPasswordHash($tempPassword)], ['id' => $user->fields['id']]);
-
          // ℹ️ This will:
          // - assign entity
          // - assign profile
          // - assign groups
          // - set recursion
          // Exactly like LDAP.
-         $auth = new \Auth();
-         $authResult = $auth->connection_db($user->fields['name'], $tempPassword);
-
-         // Rollback password change
-         $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $user->fields['id']]);
+         $user->reapplyRightRules();
 
          // No profile = user cannot login
          $profiles = \Profile_User::getUserProfiles($user->getID());
