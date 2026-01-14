@@ -1602,7 +1602,7 @@ class Provider extends \CommonDBTM {
 
             if ($newID) {
                if ($this->debug) {
-                  print_r("\nUser {$newID} created!\n");
+                  print_r("\nUser #{$newID} created!\n");
                }
             } else {
                if ($this->debug) {
@@ -1620,7 +1620,7 @@ class Provider extends \CommonDBTM {
             $user->getFromDB($newID);
          } else {
             if ($this->debug) {
-               print_r("\nUser {$user->getID()} updated!\n");
+               print_r("\nUser #{$user->getID()} updated!\n");
             }
             $user->update($userPost);
          }
@@ -1673,6 +1673,10 @@ class Provider extends \CommonDBTM {
 
          // No profile assigned through rules = user cannot login
          $profiles = \Profile_User::getUserProfiles($user->getID());
+         if ($this->debug) {
+            print_r("Current user profiles: ");
+            var_dump($profiles);
+         }
          // Verification default profiles exist in the entity
          // If no default profile exists, the user will not be able to log in.
          // In this case, we retrieve a profile and an entity and assign these values ​​to it.
@@ -1715,6 +1719,7 @@ class Provider extends \CommonDBTM {
             $userProfile['is_recursive'] = 0; // Sub-entities
             $userProfile['profiles_id'] = intval($profils);
             $userProfile['add'] = "Ajouter";
+            $userProfile['is_dynamic'] = 1;
             $profileResult = $profile->add($userProfile);
             if ($this->debug) {
                print_r("Profile assignment result: ");
@@ -1778,7 +1783,7 @@ class Provider extends \CommonDBTM {
          if (is_numeric($groupValue)) {
             if ($group->getFromDB((int)$groupValue)) {
                if ($this->debug) {
-                  print_r("Group found by ID\n");
+                  print_r("Group found by ID (#{$id})\n");
                }
                $groupId = (int) $groupValue;
             }
@@ -1793,7 +1798,7 @@ class Provider extends \CommonDBTM {
 
             if (!empty($found)) {
                if ($this->debug) {
-                  print_r("Group found by name\n");
+                  print_r("Group found by name ({$groupValue})\n");
                }
                $groupId = (int) array_key_first($found);
             }
@@ -1947,21 +1952,21 @@ class Provider extends \CommonDBTM {
          'remote_id' => $remote_id,
       ]);
 
-      $result = $link->add([
+      $linkResult = $link->add([
          'plugin_singlesignon_providers_id' => $this->fields['id'],
          'groups_id' => $group_id,
          'remote_id' => $remote_id,
       ]);
 
       if ($this->debug) {
-         if ($result) {
+         if ($linkResult) {
             print_r("\nGroup #{$group_id} linked to remote '" . $remote_id . "'\n");
          } else {
             print_r("\nFailed to link Group #{$group_id} to remote '" . $remote_id . "'\n");
          }
       }
 
-      return $result;
+      return $linkResult;
    }
 
    /**
