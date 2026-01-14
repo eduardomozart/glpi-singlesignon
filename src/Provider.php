@@ -103,7 +103,7 @@ class Provider extends \CommonDBTM {
 
       $debug_mode = ($_SESSION['glpi_use_mode'] == \Session::DEBUG_MODE);
       if ($debug_mode) {
-         $tabs[1] = '<span class="d-flex align-items-center"><i class="ti ti-bug"></i>' . __('Debug') . '</span>';
+         $tabs[1] = '<span class="d-flex align-items-center"><i class="ti ti-bug me-2"></i>' . __('Debug') . '</span>';
       }
 
       return $tabs;
