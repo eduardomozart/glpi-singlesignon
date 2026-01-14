@@ -1203,10 +1203,10 @@ class Provider extends \CommonDBTM {
       // Get Azure AD groups from Microsoft Graph API
       if (!isset($this->_resource_owner['groups']) && preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url)) {
          if ($this->debug) {
-            print_r("\fetch user groups from MS graph API\n");
+            print_r("\nfetch user groups from MS graph API\n");
          }
 
-         $url = "https://graph.microsoft.com/v1.0/me/photo/memberOf";
+         $url = "https://graph.microsoft.com/v1.0/me/memberOf";
          $content = \Toolbox::callCurl($url, [
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
@@ -1613,7 +1613,7 @@ class Provider extends \CommonDBTM {
          // Create user groups on the entity which the SSO provider belongs
          // Groups should exist to be assigned through rules, that's the reason
          // we create them before executing the rule engine
-         $groups = $this->extractUserGroups($user);
+         $groups = $this->extractUserGroups($resource_array);
          $this->assignGroupsToUser($user, $groups, $this->fields['entities_id']);
 
          // Set a random password for the current user
