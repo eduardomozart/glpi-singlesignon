@@ -1784,10 +1784,10 @@ class Provider extends \CommonDBTM {
          // If numeric -> assume group ID
          if (is_numeric($groupValue)) {
             if ($group->getFromDB((int)$groupValue)) {
-               if ($this->debug) {
-                  print_r("Group found by ID (#{$id})\n");
-               }
                $groupId = (int) $groupValue;
+               if ($this->debug) {
+                  print_r("Group found by ID (#{$groupId})\n");
+               }
             }
          }
 
