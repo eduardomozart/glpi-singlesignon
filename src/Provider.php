@@ -1533,7 +1533,6 @@ class Provider extends \CommonDBTM {
             'firstname' => $firstname,
             //'picture' => $resource_array['picture'] ?? '',
             'picture' => $resource_array['picture'],
-            'is_active' => 1
          ];
       }
 
@@ -1570,7 +1569,6 @@ class Provider extends \CommonDBTM {
             'name' => $login,
             'realname' => $firstLastArray[1],
             'firstname' => $firstLastArray[0],
-            'is_active' => 1
          ];
          // Set the office location from Office 365 user as entity for the GLPI new user if they names match
          if (isset($resource_array['officeLocation'])) {
@@ -1588,8 +1586,9 @@ class Provider extends \CommonDBTM {
             // Generates an api token and a personal token... probably not necessary
             $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
             $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
-            array_merge($userPost, [
+            $userPost = array_merge($userPost, [
                'add' => 1,
+               'is_active' => 1,
                'password' => '',
                'api_token' => $tokenAPI,
                'api_token_date' => date("Y-m-d H:i:s"),
