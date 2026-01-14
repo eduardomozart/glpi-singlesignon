@@ -1584,7 +1584,7 @@ class Provider extends \CommonDBTM {
       }
 
       try {
-         if ($user->getID() > 0) {
+         if ($user->getID() == -1) {
             // Generates an api token and a personal token... probably not necessary
             $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
             $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
