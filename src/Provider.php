@@ -1621,6 +1621,8 @@ class Provider extends \CommonDBTM {
             // - cannot login yet
             // This is intentional.
             $user->getFromDB($newID);
+
+            $this->assignDefaultProfileToUser($user);
          } else {
             if ($this->debug) {
                print_r("\nUser #{$user->getID()} updated!\n");
@@ -1667,8 +1669,6 @@ class Provider extends \CommonDBTM {
          $this->assignGroupsToUser($user, $groups, $this->fields['entities_id']);
 
          $this->syncOAuthPhoto($user);
-
-         $this->assignDefaultProfileToUser($user);
 
          return $user;
       } catch (\Exception $ex) {
@@ -1740,7 +1740,7 @@ class Provider extends \CommonDBTM {
          $userProfile['is_recursive'] = 0; // Sub-entities
          $userProfile['profiles_id'] = intval($profils);
          $userProfile['add'] = "Ajouter";
-         $userProfile['is_dynamic'] = 1;
+         $userProfile['is_dynamic'] = 1; // Setting to 1, the rule engine can override the Profile
          $profileResult = $profile->add($userProfile);
          if ($this->debug) {
             print_r("Profile assignment result: ");
