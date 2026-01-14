@@ -1866,7 +1866,7 @@ class Provider extends \CommonDBTM {
 
       if (!$user) {
          if ($this->debug) {
-            print_r("User does not exist");
+            print_r("User has not been found");
          }
          return false;
       }
