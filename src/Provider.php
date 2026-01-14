@@ -1668,14 +1668,6 @@ class Provider extends \CommonDBTM {
 
          $this->syncOAuthPhoto($user);
 
-         // ℹ️ This will:
-         // - assign entity
-         // - assign profile
-         // - assign groups
-         // - set recursion
-         // Exactly like LDAP.
-         $user->reapplyRightRules();
-
          $this->assignDefaultProfileToUser($user);
 
          return $user;
@@ -1873,8 +1865,8 @@ class Provider extends \CommonDBTM {
 
       foreach ($links as $link) {
          // Remove user from the group
-         $groups_id = $link->field['groups_id'];
-         $users_id = $link->field['users_id'];
+         $groups_id = $link['groups_id'];
+         $users_id = $link['users_id'];
          $unlinkResult = $groupUser->delete(['id' => $link['id']], true);
          if ($this->debug) {
             if ($unlinkResult) {
@@ -1889,31 +1881,44 @@ class Provider extends \CommonDBTM {
    public function login() {
       $user = $this->findUser();
 
-      // Create fake auth
-      // phpcs:disable
       $auth = new \Auth();
 
       if (!$user) {
          $auth->auth_succeded = false;
          $auth->user_present = false;
+         return $auth;
       }
-      if (is_object($user)) {
-         $auth->user = $user;
-         $auth->auth_succeded = true;
-         $auth->user_present = true;
-         $auth->user->fields['authtype'] = \Auth::DB_GLPI;
-      }
-      $auth->extauth = 1;
 
-      $authResult = \Session::init($auth);
-      if ($this->debug) {
-         print_r("Auth result: ");
-         var_dump($authResult);
-      }
+      // Create fake auth
+      // phpcs:disable
+      /* $auth = new Auth();
+      $auth->user = $user;
+      $auth->auth_succeded = true;
+      $auth->extauth = 1;
+      $auth->user_present = 1;
+      $auth->user->fields['authtype'] = \Auth::DB_GLPI;
+
+      \Session::init($auth);
 
       // Return false if the profile is not defined in \Session::init($auth)
-      return $auth;
+      return $auth->auth_succeded; */
       // phpcs:enable
+
+      global $DB;
+
+      $userId = $user->fields['id'];
+
+      // Set a random password for the current user
+      $tempPassword = bin2hex(random_bytes(64));
+      $DB->update('glpi_users', ['password' => \Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+
+      // Log-in using the generated password as if you were logging in using the login form
+      $authResult = $auth->login($user->fields['name'], $tempPassword);
+
+      // Rollback password change
+      $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+
+      return $auth;
    }
 
    public function linkUser(int $user_id) {
