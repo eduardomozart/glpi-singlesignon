@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use RuleRightCollection;
+use RuleRight;
+
 /**
  * ---------------------------------------------------------------------
  * SingleSignOn is a plugin which allows to use SSO for auth
@@ -103,7 +106,7 @@ class Provider extends \CommonDBTM {
 
       $debug_mode = ($_SESSION['glpi_use_mode'] == \Session::DEBUG_MODE);
       if ($debug_mode) {
-         $tabs[1] =  __('Debug');
+         $tabs[1] = '<i class="ti ti-bug"></i>' . __('Debug');
       }
 
       return $tabs;
@@ -234,6 +237,35 @@ class Provider extends \CommonDBTM {
       echo "</td>";
 
       echo "<tr class='tab_bg_1'>";
+      echo "<th colspan='4'>" . \__sso('Advanced Settings') . "</th>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . \__sso('SSL Verify Host');
+      echo "&nbsp;";
+      \Html::showToolTip(nl2br(\__sso('Verify the SSL certificate hostname. Disable only for testing with self-signed certificates.')));
+      echo "</td>";
+      echo "<td>";
+      \Dropdown::showYesNo("ssl_verifyhost", $this->fields["ssl_verifyhost"] ?? 1);
+      echo "</td>";
+      echo "<td>" . \__sso('SSL Verify Peer');
+      echo "&nbsp;";
+      \Html::showToolTip(nl2br(\__sso('Verify the SSL certificate authenticity. Disable only for testing with self-signed certificates.')));
+      echo "</td>";
+      echo "<td>";
+      \Dropdown::showYesNo("ssl_verifypeer", $this->fields["ssl_verifypeer"] ?? 1);
+      echo "</td>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . \__sso('Groups Claim Name');
+      echo "&nbsp;";
+      \Html::showToolTip(nl2br(\__sso('Override the claim name used to extract user groups from the OAuth response. Supports dot notation for nested fields (e.g., "realm_access.roles", "custom.groups"). Leave empty to use default claim names (groups, roles, realm_access.roles).')));
+      echo "</td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='groups_claim' value='" . ($this->fields["groups_claim"] ?? '') . "' class='form-control' placeholder='groups'></td>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
       echo "<th colspan='4'>" . __('Personalization') . "</th>";
       echo "</tr>\n";
 
@@ -346,6 +378,14 @@ class Provider extends \CommonDBTM {
       return true;
    }
 
+   public function getEmpty() {
+      parent::getEmpty();
+
+      // Set secure defaults for new providers
+      $this->fields['ssl_verifyhost'] = 1;
+      $this->fields['ssl_verifypeer'] = 1;
+   }
+
    function prepareInputForAdd($input) {
       return $this->prepareInput($input);
    }
@@ -359,6 +399,7 @@ class Provider extends \CommonDBTM {
       $this->deleteChildrenAndRelationsFromDb(
          [
             'PluginSinglesignonProvider_User',
+            'PluginSinglesignonProvider_Group',
          ]
       );
    }
@@ -641,7 +682,7 @@ class Provider extends \CommonDBTM {
       $options['github'] = \__sso('GitHub');
       $options['google'] = \__sso('Google');
       $options['instagram'] = \__sso('Instagram');
-      $options['linkedin'] = \__sso('LinkdeIn');
+      $options['linkedin'] = \__sso('LinkedIn');
 
       return $options;
    }
@@ -1040,8 +1081,8 @@ class Provider extends \CommonDBTM {
          ],
          CURLOPT_POST => true,
          CURLOPT_POSTFIELDS => http_build_query($params),
-         CURLOPT_SSL_VERIFYHOST => false,
-         CURLOPT_SSL_VERIFYPEER => false,
+         CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
+         CURLOPT_SSL_VERIFYPEER => ($this->fields['ssl_verifypeer'] ?? true) ? 2 : 0,
       ]);
 
       if ($this->debug) {
@@ -1098,10 +1139,16 @@ class Provider extends \CommonDBTM {
 
       $headers = \Plugin::doHookFunction("sso:resource_owner_header", $headers);
 
+      if ($this->debug) {
+         print_r("Headers:\n");
+         print_r($headers);
+         print_r("\n");
+      }
+
       $content = \Toolbox::callCurl($url, [
          CURLOPT_HTTPHEADER => $headers,
-         CURLOPT_SSL_VERIFYHOST => false,
-         CURLOPT_SSL_VERIFYPEER => false,
+         CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
+         CURLOPT_SSL_VERIFYPEER => ($this->fields['ssl_verifypeer'] ?? true) ? 2 : 0,
       ]);
 
       if ($this->debug) {
@@ -1111,12 +1158,24 @@ class Provider extends \CommonDBTM {
       try {
          $data = json_decode($content, true);
          if ($this->debug) {
+            print_r("\nDecoded data:\n");
             print_r($data);
          }
+
+         // Check if json_decode failed
+         if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
+            if ($this->debug) {
+               print_r("\nJSON decode error: " . json_last_error_msg() . "\n");
+            }
+            return false;
+         }
+
          $this->_resource_owner = $data;
       } catch (\Exception $ex) {
          if ($this->debug) {
-            print_r($content);
+            print_r("\nException occurred:\n");
+            print_r($ex->getMessage());
+            print_r("\n");
          }
          return false;
       }
@@ -1128,8 +1187,8 @@ class Provider extends \CommonDBTM {
          $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
          $content = \Toolbox::callCurl($email_url, [
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
+            CURLOPT_SSL_VERIFYPEER => ($this->fields['ssl_verifypeer'] ?? true) ? 2 : 0,
          ]);
 
          try {
@@ -1144,7 +1203,147 @@ class Provider extends \CommonDBTM {
          }
       }
 
+      // Get Azure AD groups from Microsoft Graph API
+      if (!isset($this->_resource_owner['groups']) && preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url)) {
+         if ($this->debug) {
+            print_r("\fetch user groups from MS graph API\n");
+         }
+
+         $groups_url = "https://graph.microsoft.com/v1.0/me/photo/memberOf";
+         $groups_req = \Toolbox::callCurl($photo_url, [
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
+            CURLOPT_SSL_VERIFYPEER => ($this->fields['ssl_verifypeer'] ?? true) ? 2 : 0,
+         ]);
+         if (!empty($groups_req)) {
+            $group = new \Group();
+            $groups = [];
+
+            foreach ($response['value'] as $entry) {
+               $group_id = false;
+
+               if (($entry['@odata.type'] ?? '') === '#microsoft.graph.group') {
+                  // Check if exists a group association into 'glpi_plugin_singlesignon_providers_users' table
+                  $link = new \PluginSinglesignonProvider_Group();
+                  $condition = "`remote_id` = '{$entry['id']}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
+                  if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+                     $condition = [$condition];
+                  }
+                  $links = $link->find($condition);
+                  // There's a valid link to the Azure AD group
+                  if (!empty($links) && $first = reset($links)) {
+                     if($group->getFromDB($entry['id'])) {
+                        $group_id = $entry['id'];
+                     }
+                  }
+                  // There's no link or link is broken
+                  if (!$group_id) {
+                     $group_id = $group->add([
+                        'name'        => $entry['displayName'],
+                        'entities_id' => $this->fields['entities_id'],
+                        'is_recursive'=> $this->fields['is_recursive'], // Sub-entities
+                        'comment'     => __('Created automatically by Single Sign-On', 'singlesignon'),
+                        'add'         => 1
+                     ]);
+                  }
+                  $groups[] = $group_id;
+               }
+            }
+
+            if ($this->debug) {
+               print_r($groups);
+            }
+            $this->_resource_owner['groups'] = $groups;
+         }
+      }
+
       return $this->_resource_owner;
+   }
+
+   /**
+    * Extract user groups from OAuth resource response
+    * Supports custom claim names with dot notation
+    *
+    * @param array $resource_array The OAuth resource owner data
+    * @return array Array of group remoteids and names
+    */
+   protected function extractUserGroups($resource_array) {
+      $groups = [];
+
+      // Check if a custom groups claim is configured
+      if (!empty($this->fields['groups_claim'])) {
+         $claim_path = $this->fields['groups_claim'];
+
+         if ($this->debug) {
+            print_r("\nUsing custom groups claim: $claim_path\n");
+         }
+
+         // Support dot notation for nested fields (e.g., "realm_access.roles")
+         $keys = explode('.', $claim_path);
+         $value = $resource_array;
+
+         foreach ($keys as $key) {
+            if (isset($value[$key])) {
+               $value = $value[$key];
+            } else {
+               $value = null;
+               break;
+            }
+         }
+
+         if ($value !== null) {
+            if (is_array($value)) {
+               $groups = array_merge($groups, $value);
+            } elseif (is_string($value)) {
+               // Support comma or space-separated strings
+               $groups = array_merge($groups, preg_split('/[,\s]+/', $value));
+            }
+         }
+
+         if ($this->debug) {
+            print_r("Groups from custom claim: ");
+            var_dump($groups);
+         }
+
+         // If custom claim is configured, only use that claim
+         if (!empty($groups)) {
+            return array_values(array_filter(array_unique($groups), function($group) {
+               return !empty($group);
+            }));
+         }
+      }
+
+      // Fall back to checking standard group field names
+      $group_fields = ['groups', 'roles', 'group', 'role'];
+
+      foreach ($group_fields as $field) {
+         if (isset($resource_array[$field])) {
+            if (is_array($resource_array[$field])) {
+               $groups = array_merge($groups, $resource_array[$field]);
+            } elseif (is_string($resource_array[$field])) {
+               $groups = array_merge($groups, preg_split('/[,\s]+/', $resource_array[$field]));
+            }
+         }
+      }
+
+      // Keycloak-specific: realm_access.roles
+      if (isset($resource_array['realm_access']['roles']) && is_array($resource_array['realm_access']['roles'])) {
+         $groups = array_merge($groups, $resource_array['realm_access']['roles']);
+      }
+
+      // Keycloak-specific: resource_access.{client_id}.roles
+      if (isset($resource_array['resource_access']) && is_array($resource_array['resource_access'])) {
+         foreach ($resource_array['resource_access'] as $client_roles) {
+            if (isset($client_roles['roles']) && is_array($client_roles['roles'])) {
+               $groups = array_merge($groups, $client_roles['roles']);
+            }
+         }
+      }
+
+      // Remove duplicates, empty values, and reindex array
+      return array_values(array_filter(array_unique($groups), function($group) {
+         return !empty($group);
+      }));
    }
 
    public function findUser() {
@@ -1159,119 +1358,130 @@ class Provider extends \CommonDBTM {
       $id = \Plugin::doHookFunction("sso:find_user", $resource_array);
 
       if (is_numeric($id) && $user->getFromDB($id)) {
-         return $user;
-      }
-
-      $remote_id = false;
-      $remote_id_fields = ['id', 'username', 'sub'];
-
-      foreach ($remote_id_fields as $field) {
-         if (isset($resource_array[$field]) && !empty($resource_array[$field])) {
-            $remote_id = $resource_array[$field];
-            break;
+         if ($this->debug) {
+            print_r("User found by ID\n");
          }
       }
 
-      if ($remote_id) {
-         $link = new \PluginSinglesignonProvider_User();
-         $condition = "`remote_id` = '{$remote_id}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
-         if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-            $condition = [$condition];
-         }
-         $links = $link->find($condition);
-         if (!empty($links) && $first = reset($links)) {
-            $id = $first['users_id'];
-         }
+      if (!$user->getID()) {
+         $remote_id = false;
+         $remote_id_fields = ['id', 'username', 'sub'];
 
-         $remote_id;
-      }
-
-      if (is_numeric($id) && $user->getFromDB($id)) {
-         return $user;
-      }
-
-      $split = $this->fields['split_domain'];
-      $authorizedDomainsString = $this->fields['authorized_domains'];
-      $authorizedDomains = [];
-      if (isset($authorizedDomainsString)) {
-         $authorizedDomains = explode(',', $authorizedDomainsString);
-      }
-
-      // check email first
-      $email = false;
-      $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
-
-      foreach ($email_fields as $field) {
-         if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-            $email = $resource_array[$field];
-            $isAuthorized = empty($authorizedDomains);
-            foreach ($authorizedDomains as $authorizedDomain) {
-               if (preg_match("/{$authorizedDomain}$/i", $email)) {
-                  $isAuthorized = true;
-               }
+         foreach ($remote_id_fields as $field) {
+            if (isset($resource_array[$field]) && !empty($resource_array[$field])) {
+               $remote_id = $resource_array[$field];
+               break;
             }
-            if (!$isAuthorized) {
-               return false;
+         }
+
+         if ($remote_id) {
+            $link = new \PluginSinglesignonProvider_User();
+            $condition = "`remote_id` = '{$remote_id}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
+            if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+               $condition = [$condition];
             }
-            if ($split) {
-               $emailSplit = explode("@", $email);
-               $email = $emailSplit[0];
+            $links = $link->find($condition);
+            if (!empty($links) && $first = reset($links)) {
+               $id = $first['users_id'];
             }
-            break;
+         }
+
+         if (is_numeric($id) && $user->getFromDB($id)) {
+            if ($this->debug) {
+               print_r("User found by remote ID\n");
+            }
          }
       }
 
-      $login = false;
-      $use_email = $this->fields['use_email_for_login'];
-      if ($email && $use_email) {
-         $login = $email;
-      } else {
-         $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
+      if (!$user->getID()) {
+         $split = $this->fields['split_domain'];
+         $authorizedDomainsString = $this->fields['authorized_domains'];
+         $authorizedDomains = [];
+         if (isset($authorizedDomainsString)) {
+            $authorizedDomains = explode(',', $authorizedDomainsString);
+         }
 
-         foreach ($login_fields as $field) {
+         // check email first
+         $email = false;
+         $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
+
+         foreach ($email_fields as $field) {
             if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-               $login = $resource_array[$field];
+               $email = $resource_array[$field];
                $isAuthorized = empty($authorizedDomains);
                foreach ($authorizedDomains as $authorizedDomain) {
-                  if (preg_match("/{$authorizedDomain}$/i", $login)) {
+                  if (preg_match("/{$authorizedDomain}$/i", $email)) {
                      $isAuthorized = true;
                   }
                }
-
                if (!$isAuthorized) {
+                  if ($this->debug) {
+                     print_r("\nLogin not authorized by domain restriction\n");
+                  }
                   return false;
                }
                if ($split) {
-                  $loginSplit = explode("@", $login);
-                  $login = $loginSplit[0];
+                  $emailSplit = explode("@", $email);
+                  $email = $emailSplit[0];
                }
                break;
             }
          }
+
+         $login = false;
+         $use_email = $this->fields['use_email_for_login'];
+         if ($email && $use_email) {
+            $login = $email;
+         } else {
+            $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
+
+            foreach ($login_fields as $field) {
+               if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
+                  $login = $resource_array[$field];
+                  $isAuthorized = empty($authorizedDomains);
+                  foreach ($authorizedDomains as $authorizedDomain) {
+                     if (preg_match("/{$authorizedDomain}$/i", $login)) {
+                        $isAuthorized = true;
+                     }
+                  }
+
+                  if (!$isAuthorized) {
+                     return false;
+                  }
+                  if ($split) {
+                     $loginSplit = explode("@", $login);
+                     $login = $loginSplit[0];
+                  }
+                  break;
+               }
+            }
+         }
+
+         if ($login && $user->getFromDBbyName($login)) {
+            print_r("User found by login name\n");
+         }
       }
 
-      if ($login && $user->getFromDBbyName($login)) {
-         return $user;
-      }
+      if (!$user->getID()) {
+         $default_condition = '';
 
-      $default_condition = '';
+         if (version_compare(GLPI_VERSION, '9.3', '>=')) {
+            $default_condition = [];
+         }
 
-      if (version_compare(GLPI_VERSION, '9.3', '>=')) {
-         $default_condition = [];
-      }
-
-      $bOk = true;
-      if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
-         return $user;
-      } else {
-         $bOk = false;
+         if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
+            print_r("User found by email\n");
+         }
       }
 
       // var_dump($bOk);
       // die();
 
-      // If the user does not exist in the database and the provider is google
-      if (static::getClientType() == "google" && !$bOk) {
+      // If the provider is google
+      if (static::getClientType() == "google") {
+         if ($this->debug) {
+            print_r("\nAttempting to create/update user for Google provider\n");
+         }
          // Generates an api token and a personal token... probably not necessary
          $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
          $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
@@ -1291,105 +1501,287 @@ class Provider extends \CommonDBTM {
 
          $userPost = [
             'name' => $login,
-            'add' => 1,
-            'password' => '',
             'realname' => $realname,
             'firstname' => $firstname,
             //'picture' => $resource_array['picture'] ?? '',
             'picture' => $resource_array['picture'],
-            'api_token' => $tokenAPI,
-            'api_token_date' => date("Y-m-d H:i:s"),
-            'personal_token' => $tokenPersonnel,
             'is_active' => 1
          ];
-         $userPost['_useremails'][-1] = $useremail;
-         $user->add($userPost);
-         return $user;
-      }
-
-      // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
-      if (static::getClientType() == "generic" && !$bOk) {
-         try {
-            // Generates an api token and a personal token... probably not necessary
-            $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
-            $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
-
-            $splitname = $this->fields['split_name'];
-            $firstLastArray = ($splitname) ? preg_split('/ /', $resource_array['name'], 2) : preg_split('/ /', $resource_array['displayName'], 2);
-
-            $userPost = [
-               'name' => $login,
-               'add' => 1,
-               'password' => '',
-               'realname' => $firstLastArray[1],
-               'firstname' => $firstLastArray[0],
-               'api_token' => $tokenAPI,
-               'api_token_date' => date("Y-m-d H:i:s"),
-               'personal_token' => $tokenPersonnel,
-               'is_active' => 1
-            ];
-
-            // Set the office location from Office 365 user as entity for the GLPI new user if they names match
-            if (isset($resource_array['officeLocation'])) {
-               global $DB;
-               foreach ($DB->request('glpi_entities') as $entity) {
-                  if ($entity['name'] == $resource_array['officeLocation']) {
-                     $userPost['entities_id'] = $entity['id'];
-                     break;
-                  }
-               }
-            }
-
-            if ($email) {
-               $userPost['_useremails'][-1] = $email;
-            }
-
-            //$user->check(-1, CREATE, $userPost);
-            $newID = $user->add($userPost);
-
-            // var_dump($newID);
-
-            $profils = 0;
-            // Verification default profiles exist in the entity
-            // If no default profile exists, the user will not be able to log in.
-            // In this case, we retrieve a profile and an entity and assign these values ​​to it.
-            // The administrator can change these values ​​later.
-            if (0 == \Profile::getDefault()) {
-               // No default profiles
-               // Profile recovery and assignment
-               global $DB;
-
-               $datasProfiles = [];
-               foreach ($DB->request('glpi_profiles') as $data) {
-                  array_push($datasProfiles, $data);
-               }
-               $datasEntities = [];
-               foreach ($DB->request('glpi_entities') as $data) {
-                  array_push($datasEntities, $data);
-               }
-               if (count($datasProfiles) > 0 && count($datasEntities) > 0) {
-                  $profils = $datasProfiles[0]['id'];
-                  $entitie = $datasEntities[0]['id'];
-
-                  $profile   = new \Profile_User();
-                  $userProfile['users_id'] = intval($user->fields['id']);
-                  $userProfile['entities_id'] = intval($entitie);
-                  $userProfile['is_recursive'] = 0;
-                  $userProfile['profiles_id'] = intval($profils);
-                  $userProfile['add'] = "Ajouter";
-                  $profile->add($userProfile);
-               } else {
-                  return false;
-               }
-            }
-
-            return $user;
-         } catch (\Exception $ex) {
-            return false;
+         if (!$user->getID()) {
+            $userPost['_useremails'][-1] = $useremail;
          }
       }
 
+      // If the provider is generic (Ex: azure ad without common tenant)
+      if (static::getClientType() == "generic") {
+         if ($this->debug) {
+            print_r("\nAttempting to create/update user for Generic provider\n");
+         }
+         $splitname = $this->fields['split_name'];
+         $firstname = '';
+         $realname = '';
+         // Try to get name from various fields
+         if ($splitname && isset($resource_array['name']) && !empty($resource_array['name'])) {
+            $firstLastArray = preg_split('/ /', $resource_array['name'], 2);
+            $firstname = $firstLastArray[0];
+            $realname = isset($firstLastArray[1]) ? $firstLastArray[1] : '';
+         } else if (isset($resource_array['displayName']) && !empty($resource_array['displayName'])) {
+            $firstLastArray = preg_split('/ /', $resource_array['displayName'], 2);
+            $firstname = $firstLastArray[0];
+            $realname = isset($firstLastArray[1]) ? $firstLastArray[1] : '';
+         } else if (isset($resource_array['given_name']) && isset($resource_array['family_name'])) {
+            // OpenID Connect standard claims
+            $firstname = $resource_array['given_name'];
+            $realname = $resource_array['family_name'];
+         } else if (isset($resource_array['preferred_username'])) {
+            // Fallback: use preferred_username as firstname
+            $firstname = $resource_array['preferred_username'];
+            $realname = '';
+         } else if ($login) {
+            // The user will have empty realname if no other info is available
+         }
+
+         $userPost = [
+            'name' => $login,
+            'realname' => $firstLastArray[1],
+            'firstname' => $firstLastArray[0],
+            'is_active' => 1
+         ];
+         // Set the office location from Office 365 user as entity for the GLPI new user if they names match
+         if (isset($resource_array['officeLocation'])) {
+            global $DB;
+            foreach ($DB->request('glpi_entities') as $entity) {
+               if ($entity['name'] == $resource_array['officeLocation']) {
+                  $userPost['entities_id'] = $entity['id'];
+                  break;
+               }
+            }
+         }
+         if ($email && !$user->getID()) {
+            $userPost['_useremails'][-1] = $email;
+         }
+      }
+
+      try {
+         if (!$user->getID()) {
+            // Generates an api token and a personal token... probably not necessary
+            $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+            $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+            array_push($userPost, [
+               'add' => 1,
+               'password' => '',
+               'api_token' => $tokenAPI,
+               'api_token_date' => date("Y-m-d H:i:s"),
+               'personal_token' => $tokenPersonnel,
+            ]);
+
+            //$user->check(-1, CREATE, $userPost);
+            $newID = $user->add($userPost);
+            // var_dump($newID);
+
+            if (!$newID) {
+               if ($this->debug) {
+                  print_r("\nUser creation failed!\n");
+               }
+            }
+
+            // ⚠️ At this point:
+            // - user exists
+            // - no profile yet
+            // - no entity yet
+            // - cannot login yet
+            // This is intentional.
+
+         } else {
+            $user->update($userPost);
+         }
+
+         // Create user groups on the entity which the SSO provider belongs
+         // Groups should exist to be assigned through rules, that's the reason
+         // we create them before executing the rule engine
+         $this->assignGroupsToUser($user, $groups, $this->fields['entities_id']);
+
+         // ℹ️ This will:
+         // - assign entity
+         // - assign profile
+         // - assign groups
+         // - set recursion
+         // Exactly like LDAP.
+         $this->applyAssignmentUserRules($user, $resource_array);
+
+         // No profile = user cannot login
+         $profiles = \Profile_User::getUserProfiles($user->getID());
+         // Verification default profiles exist in the entity
+         // If no default profile exists, the user will not be able to log in.
+         // In this case, we retrieve a profile and an entity and assign these values ​​to it.
+         // The administrator can change these values ​​later.
+         if (empty($profiles) && 0 == \Profile::getDefault()) {
+            if ($this->debug) {
+               print_r("\nNo default profile found, assigning first available profile\n");
+            }
+            // No default profiles
+            // Profile recovery and assignment
+            global $DB;
+            $datasProfiles = [];
+            foreach ($DB->request('glpi_profiles') as $data) {
+               array_push($datasProfiles, $data);
+            }
+            /* $datasEntities = [];
+            foreach ($DB->request('glpi_entities') as $data) {
+               array_push($datasEntities, $data);
+            } */
+
+            if ($this->debug) {
+               print_r("Available profiles: " . count($datasProfiles) . "\n");
+               print_r("Available entities: " . count($datasEntities) . "\n");
+            }
+
+            if (count($datasProfiles) > 0) {
+               $profils = $datasProfiles[0]['id'];
+               $entitie = $this->fields['entities_id'];
+
+               if ($this->debug) {
+                  print_r("Assigning profile ID: $profils, entity ID: $entitie\n");
+               }
+
+               $profile   = new \Profile_User();
+               $userProfile['users_id'] = intval($user->fields['id']);
+               $userProfile['entities_id'] = intval($entitie);
+               $userProfile['is_recursive'] = 0; // Sub-entities
+               $userProfile['profiles_id'] = intval($profils);
+               $userProfile['add'] = "Ajouter";
+               $profileResult = $profile->add($userProfile);
+
+               if ($this->debug) {
+                  print_r("Profile assignment result: ");
+                  var_dump($profileResult);
+               }
+               if (!$profileResult) {
+                  if ($this->debug) {
+                     print_r("Profile assignment failed!\n");
+                  }
+                  return false;
+               }
+            } else {
+               if ($this->debug) {
+                  print_r("No profiles or entities available!\n");
+               }
+               return false;
+            } 
+         } else {
+            if ($this->debug) {
+               print_r("\nDefault profile exists, will be assigned automatically\n");
+            }
+         }
+
+         return $user;
+      } catch (\Exception $ex) {
+         if ($this->debug) {
+            print_r("\nException during user creation:\n");
+            print_r($ex->getMessage());
+            print_r("\n");
+            print_r($ex->getTraceAsString());
+            print_r("\n");
+         }
+         return false;
+      }
+
+      if ($this->debug) {
+         print_r("\nReached end of findUser() - no user found or created\n");
+      }
+
       return false;
+   }
+
+   protected function assignGroupsToUser(\User $user, array $groups, int $entities_id = 0): void {
+      if (!$user->getID()) {
+         return;
+      }
+
+      $this->removeUserFromAllGroups($user);
+
+      if (empty($groups)) {
+         return;
+      }
+
+      $groupUser = new \Group_User();
+      $group     = new \Group();
+
+      foreach ($groups as $groupValue) {
+
+         $groupId = null;
+
+         // If numeric -> assume group ID
+         if (is_numeric($groupValue)) {
+            if ($group->getFromDB((int)$groupValue)) {
+               if ($this->debug) {
+                  print_r("Group found by ID\n");
+               }
+               $groupId = (int) $groupValue;
+            }
+         }
+
+         // Otherwise -> lookup by name
+         if (!$groupId) {
+            $found = $group->find([
+               'name' => $groupValue,
+               'entities_id' => $entities_id
+            ], '', 1);
+
+            if (!empty($found)) {
+               $groupId = (int) array_key_first($found);
+            }
+         }
+
+         // Create group if not found in entity
+         if (!$groupId) {
+            $groupId = $group->add([
+               'name'        => $groupValue,
+               'entities_id' => $entities_id,
+               'is_recursive'=> $this->fields['is_recursive'], // Sub-entities
+               'comment'     => __('Created automatically by Single Sign-On', 'singlesignon'),
+               'add'         => 1
+            ]);
+         }
+
+         if (!$groupId) {
+            // Group creation failed -> skip safely
+            continue;
+         }
+
+         // Avoid duplicate membership
+         if ($groupUser->getFromDBByCrit([
+            'users_id'  => $user->getID(),
+            'groups_id' => $groupId
+         ])) {
+            continue;
+         }
+
+         // Assign group
+         $groupUser->add([
+            'users_id'    => $user->getID(),
+            'groups_id'   => $groupId,
+            'entities_id' => $entities_id,
+            'is_dynamic'  => 1 // IMPORTANT (SSO-managed)
+         ]);
+      }
+   }
+
+   protected function removeUserFromAllGroups(\User $user): void {
+
+      if (!$user->getID()) {
+         return;
+      }
+
+      $groupUser = new \Group_User();
+
+      $links = $groupUser->find([
+         'users_id' => $user->getID()
+      ]);
+
+      foreach ($links as $link) {
+         $groupUser->delete(['id' => $link['id']], true);
+      }
    }
 
    public function login() {
@@ -1476,6 +1868,21 @@ class Provider extends \CommonDBTM {
       ]);
    }
 
+   public function linkGroup($group_id, $remote_id) {
+      $link = new \PluginSinglesignonProvider_Group();
+
+      // Unlink from another user
+      $link->deleteByCriteria([
+         'plugin_singlesignon_providers_id' => $this->fields['id'],
+         'remote_id' => $remote_id,
+      ]);
+
+      return $link->add([
+         'plugin_singlesignon_providers_id' => $this->fields['id'],
+         'users_id' => $group_id,
+         'remote_id' => $remote_id,
+      ]);
+   }
 
    /**
     * Synchronize picture (photo) of the user.
@@ -1507,8 +1914,8 @@ class Provider extends \CommonDBTM {
          $photo_url = "https://graph.microsoft.com/v1.0/me/photo/\$value";
          $img = \Toolbox::callCurl($photo_url, [
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
+            CURLOPT_SSL_VERIFYPEER => ($this->fields['ssl_verifypeer'] ?? true) ? 2 : 0,
          ]);
          if (!empty($img)) {
             /* if ($this->debug) {
@@ -1577,5 +1984,41 @@ class Provider extends \CommonDBTM {
          print_r(false);
       }
       return false;
+   }
+
+    /**
+    * Add a helper method to add support for “Assignment user rules” (Rules for assigning a user).
+    * @see src/Auth.php:513
+    * @return void
+    */
+   protected function applyAssignmentUserRules(\User $user, array $resource_array): void {
+      if (!class_exists(RuleRightCollection::class)) {
+         // Safety for very old GLPI versions
+         return;
+      }
+
+      $user->fields["authtype"] = self::DB_GLPI;
+      $user->fields["password"] = $password;
+
+      // apply rule rights on local user
+      $rules  = new RuleRightCollection();
+      $groups = Group_User::getUserGroups($user->getID());
+      $groups_id = array_column($groups, 'id');
+      // Build rule input
+      // This is CRITICAL: keys must match rule criteria names
+      $result = $rules->processAllRules(
+         $groups_id,
+         $user->fields,
+         [
+         'type'  => Auth::DB_GLPI,
+         'login' => $this->user->fields['name'],
+         'email' => UserEmail::getDefaultForUser($user->getID()),
+         ]
+      );
+
+      $user->fields = $result;
+      $user->willProcessRuleRight();
+
+      return true;
    }
 }
