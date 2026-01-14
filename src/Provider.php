@@ -1210,7 +1210,7 @@ class Provider extends \CommonDBTM {
          }
 
          $url = "https://graph.microsoft.com/v1.0/me/photo/memberOf";
-         $content = \Toolbox::callCurl($groups_url, [
+         $content = \Toolbox::callCurl($url, [
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
             CURLOPT_SSL_VERIFYPEER => ($this->fields['ssl_verifypeer'] ?? true) ? 2 : 0,
@@ -1456,7 +1456,7 @@ class Provider extends \CommonDBTM {
             }
          }
       }
-      
+
       if ($login && $user->getFromDBbyName($login)) {
          print_r("User found by login name\n");
       }
