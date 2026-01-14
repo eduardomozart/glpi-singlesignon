@@ -1209,17 +1209,19 @@ class Provider extends \CommonDBTM {
             print_r("\fetch user groups from MS graph API\n");
          }
 
-         $groups_url = "https://graph.microsoft.com/v1.0/me/photo/memberOf";
-         $groups_req = \Toolbox::callCurl($groups_url, [
+         $url = "https://graph.microsoft.com/v1.0/me/photo/memberOf";
+         $content = \Toolbox::callCurl($groups_url, [
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYHOST => ($this->fields['ssl_verifyhost'] ?? true) ? 2 : 0,
             CURLOPT_SSL_VERIFYPEER => ($this->fields['ssl_verifypeer'] ?? true) ? 2 : 0,
          ]);
-         if (!empty($groups_req)) {
+         if (!empty($content)) {
             $group = new \Group();
             $groups = [];
 
-            foreach ($response['value'] as $entry) {
+            $data = json_decode($content, true);
+
+            foreach ($data['value'] as $entry) {
                $group_id = false;
 
                if (($entry['@odata.type'] ?? '') === '#microsoft.graph.group') {
@@ -1393,74 +1395,70 @@ class Provider extends \CommonDBTM {
             }
          }
       }
+      
+      $split = $this->fields['split_domain'];
+      $authorizedDomainsString = $this->fields['authorized_domains'];
+      $authorizedDomains = [];
+      if (isset($authorizedDomainsString)) {
+         $authorizedDomains = explode(',', $authorizedDomainsString);
+      }
 
-      if (!$user->getID()) {
-         $split = $this->fields['split_domain'];
-         $authorizedDomainsString = $this->fields['authorized_domains'];
-         $authorizedDomains = [];
-         if (isset($authorizedDomainsString)) {
-            $authorizedDomains = explode(',', $authorizedDomainsString);
+      // check email first
+      $email = false;
+      $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
+
+      foreach ($email_fields as $field) {
+         if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
+            $email = $resource_array[$field];
+            $isAuthorized = empty($authorizedDomains);
+            foreach ($authorizedDomains as $authorizedDomain) {
+               if (preg_match("/{$authorizedDomain}$/i", $email)) {
+                  $isAuthorized = true;
+               }
+            }
+            if (!$isAuthorized) {
+               if ($this->debug) {
+                  print_r("\nLogin not authorized by domain restriction\n");
+               }
+               return false;
+            }
+            if ($split) {
+               $emailSplit = explode("@", $email);
+               $email = $emailSplit[0];
+            }
+            break;
          }
+      }
 
-         // check email first
-         $email = false;
-         $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
-
-         foreach ($email_fields as $field) {
+      $login = false;
+      $use_email = $this->fields['use_email_for_login'];
+      if ($email && $use_email) {
+         $login = $email;
+      } else {
+         $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
+         foreach ($login_fields as $field) {
             if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-               $email = $resource_array[$field];
+               $login = $resource_array[$field];
                $isAuthorized = empty($authorizedDomains);
                foreach ($authorizedDomains as $authorizedDomain) {
-                  if (preg_match("/{$authorizedDomain}$/i", $email)) {
+                  if (preg_match("/{$authorizedDomain}$/i", $login)) {
                      $isAuthorized = true;
                   }
                }
                if (!$isAuthorized) {
-                  if ($this->debug) {
-                     print_r("\nLogin not authorized by domain restriction\n");
-                  }
                   return false;
                }
                if ($split) {
-                  $emailSplit = explode("@", $email);
-                  $email = $emailSplit[0];
+                  $loginSplit = explode("@", $login);
+                  $login = $loginSplit[0];
                }
                break;
             }
          }
-
-         $login = false;
-         $use_email = $this->fields['use_email_for_login'];
-         if ($email && $use_email) {
-            $login = $email;
-         } else {
-            $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
-
-            foreach ($login_fields as $field) {
-               if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-                  $login = $resource_array[$field];
-                  $isAuthorized = empty($authorizedDomains);
-                  foreach ($authorizedDomains as $authorizedDomain) {
-                     if (preg_match("/{$authorizedDomain}$/i", $login)) {
-                        $isAuthorized = true;
-                     }
-                  }
-
-                  if (!$isAuthorized) {
-                     return false;
-                  }
-                  if ($split) {
-                     $loginSplit = explode("@", $login);
-                     $login = $loginSplit[0];
-                  }
-                  break;
-               }
-            }
-         }
-
-         if ($login && $user->getFromDBbyName($login)) {
-            print_r("User found by login name\n");
-         }
+      }
+      
+      if ($login && $user->getFromDBbyName($login)) {
+         print_r("User found by login name\n");
       }
 
       if (!$user->getID()) {
