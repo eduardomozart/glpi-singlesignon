@@ -1273,7 +1273,7 @@ class Provider extends \CommonDBTM {
                if ($this->debug) {
                   print_r($groups);
                }
-               
+
                if (!empty($groups)) {
                   $this->_resource_owner['groups'] = $groups;
                }
@@ -1918,7 +1918,7 @@ class Provider extends \CommonDBTM {
 
       return $link->add([
          'plugin_singlesignon_providers_id' => $this->fields['id'],
-         'users_id' => $group_id,
+         'groups_id' => $group_id,
          'remote_id' => $remote_id,
       ]);
    }
