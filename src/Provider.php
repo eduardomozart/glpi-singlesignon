@@ -1248,16 +1248,18 @@ class Provider extends \CommonDBTM {
                            }
                         }
                         // There's no link or link is broken
-                        if (!$group_id) {
+                        if (!$group_id && !empty($entry['displayName'])) {
                            $group_id = $group->add([
                               'name'        => $entry['displayName'],
                               'entities_id' => $this->fields['entities_id'],
                               'is_recursive'=> $this->fields['is_recursive'], // Sub-entities
-                              'comment'     => __('Created automatically by Single Sign-On', 'singlesignon'),
+                              'comment'     => \__sso('Created automatically by Single Sign-On'),
                               'add'         => 1
                            ]);
                         }
-                        $groups[] = $group_id;
+                        if ($group_id) {
+                           $groups[] = $group_id;
+                        }
                      }
                   }
                }
@@ -1363,6 +1365,8 @@ class Provider extends \CommonDBTM {
    }
 
    public function findUser() {
+      global $DB;
+      
       $resource_array = $this->getResourceOwner();
 
       if (!$resource_array) {
@@ -1563,7 +1567,6 @@ class Provider extends \CommonDBTM {
          ];
          // Set the office location from Office 365 user as entity for the GLPI new user if they names match
          if (isset($resource_array['officeLocation'])) {
-            global $DB;
             foreach ($DB->request('glpi_entities') as $entity) {
                if ($entity['name'] == $resource_array['officeLocation']) {
                   $userPost['entities_id'] = $entity['id'];
