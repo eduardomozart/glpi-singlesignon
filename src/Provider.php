@@ -1220,43 +1220,54 @@ class Provider extends \CommonDBTM {
             $groups = [];
 
             $data = json_decode($content, true);
-
-            foreach ($data['value'] as $entry) {
-               $group_id = false;
-
-               if (($entry['@odata.type'] ?? '') === '#microsoft.graph.group') {
-                  // Check if exists a group association into 'glpi_plugin_singlesignon_providers_users' table
-                  $link = new \PluginSinglesignonProvider_Group();
-                  $condition = "`remote_id` = '{$entry['id']}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
-                  if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-                     $condition = [$condition];
-                  }
-                  $links = $link->find($condition);
-                  // There's a valid link to the Azure AD group
-                  if (!empty($links) && $first = reset($links)) {
-                     $id = $first['groups_id'];
-                     if($group->getFromDB($id)) {
-                        $group_id = $id;
-                     }
-                  }
-                  // There's no link or link is broken
-                  if (!$group_id) {
-                     $group_id = $group->add([
-                        'name'        => $entry['displayName'],
-                        'entities_id' => $this->fields['entities_id'],
-                        'is_recursive'=> $this->fields['is_recursive'], // Sub-entities
-                        'comment'     => __('Created automatically by Single Sign-On', 'singlesignon'),
-                        'add'         => 1
-                     ]);
-                  }
-                  $groups[] = $group_id;
-               }
-            }
-
             if ($this->debug) {
-               print_r($groups);
+               print_r("\nDecoded group data:\n");
+               print_r($data);
             }
-            $this->_resource_owner['groups'] = $groups;
+
+            // Check if json_decode failed
+            if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
+               if ($this->debug) {
+                  print_r("\nJSON decode error: " . json_last_error_msg() . "\n");
+               }
+            } else {
+               foreach ($data['value'] as $entry) {
+                  $group_id = false;
+
+                  if (($entry['@odata.type'] ?? '') === '#microsoft.graph.group') {
+                     // Check if exists a group association into 'glpi_plugin_singlesignon_providers_users' table
+                     $link = new \PluginSinglesignonProvider_Group();
+                     $condition = "`remote_id` = '{$entry['id']}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
+                     if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+                        $condition = [$condition];
+                     }
+                     $links = $link->find($condition);
+                     // There's a valid link to the Azure AD group
+                     if (!empty($links) && $first = reset($links)) {
+                        $id = $first['groups_id'];
+                        if($group->getFromDB($id)) {
+                           $group_id = $id;
+                        }
+                     }
+                     // There's no link or link is broken
+                     if (!$group_id) {
+                        $group_id = $group->add([
+                           'name'        => $entry['displayName'],
+                           'entities_id' => $this->fields['entities_id'],
+                           'is_recursive'=> $this->fields['is_recursive'], // Sub-entities
+                           'comment'     => __('Created automatically by Single Sign-On', 'singlesignon'),
+                           'add'         => 1
+                        ]);
+                     }
+                     $groups[] = $group_id;
+                  }
+               }
+
+               if ($this->debug) {
+                  print_r($groups);
+               }
+               $this->_resource_owner['groups'] = $groups;
+            }
          }
       }
 
@@ -1601,13 +1612,21 @@ class Provider extends \CommonDBTM {
          $groups = $this->extractUserGroups($user);
          $this->assignGroupsToUser($user, $groups, $this->fields['entities_id']);
 
+         // Set a random password for the current user
+         $tempPassword = bin2hex(random_bytes(64));
+         $DB->update('glpi_users', ['password' => \Auth::getPasswordHash($tempPassword)], ['id' => $user->fields['id']]);
+
          // ℹ️ This will:
          // - assign entity
          // - assign profile
          // - assign groups
          // - set recursion
          // Exactly like LDAP.
-         $this->applyAssignmentUserRules($user, $resource_array);
+         $auth = new \Auth();
+         $authResult = $auth->connection_db($user->fields['name'], $tempPassword);
+
+         // Rollback password change
+         $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $user->fields['id']]);
 
          // No profile = user cannot login
          $profiles = \Profile_User::getUserProfiles($user->getID());
@@ -1991,39 +2010,5 @@ class Provider extends \CommonDBTM {
          print_r(false);
       }
       return false;
-   }
-
-    /**
-    * Add a helper method to add support for “Assignment user rules” (Rules for assigning a user).
-    * @see src/Auth.php:513
-    * @return void
-    */
-   protected function applyAssignmentUserRules(\User $user, array $resource_array): void {
-      if (!class_exists(RuleRightCollection::class)) {
-         // Safety for very old GLPI versions
-         return;
-      }
-
-      $user->fields["authtype"] = self::DB_GLPI;
-      $user->fields["password"] = $password;
-
-      // apply rule rights on local user
-      $rules  = new RuleRightCollection();
-      $groups = Group_User::getUserGroups($user->getID());
-      $groups_id = array_column($groups, 'id');
-      // Build rule input
-      // This is CRITICAL: keys must match rule criteria names
-      $result = $rules->processAllRules(
-         $groups_id,
-         $user->fields,
-         [
-         'type'  => Auth::DB_GLPI,
-         'login' => $this->user->fields['name'],
-         'email' => UserEmail::getDefaultForUser($user->getID()),
-         ]
-      );
-
-      $user->fields = $result;
-      $user->willProcessRuleRight();
    }
 }
