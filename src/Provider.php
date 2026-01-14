@@ -1954,9 +1954,9 @@ class Provider extends \CommonDBTM {
 
       if ($this->debug) {
          if ($result) {
-            print_r("\nUser #{$user->getID()} linked to group: '" . $remote_id . "'\n");
+            print_r("\nGroup #{$group_id} linked to remote '" . $remote_id . "'\n");
          } else {
-            print_r("\nFailed to link User #{$user->getID()} to group: '" . $remote_id . "'\n");
+            print_r("\nFailed to link Group #{$group_id} to remote '" . $remote_id . "'\n");
          }
       }
 
