@@ -103,7 +103,7 @@ class Provider extends \CommonDBTM {
 
       $debug_mode = ($_SESSION['glpi_use_mode'] == \Session::DEBUG_MODE);
       if ($debug_mode) {
-         $tabs[1] = '<i class="ti ti-bug"></i>' . __('Debug');
+         $tabs[1] = '<span class="d-flex align-items-center"><i class="ti ti-bug"></i>' . __('Debug') . '</span>';
       }
 
       return $tabs;
@@ -1774,7 +1774,7 @@ class Provider extends \CommonDBTM {
                'name'        => $groupValue,
                'entities_id' => $entities_id,
                'is_recursive'=> $this->fields['is_recursive'], // Sub-entities
-               'comment'     => __('Created automatically by Single Sign-On', 'singlesignon'),
+               'comment'     => \__sso('Created automatically by Single Sign-On'),
                'add'         => 1
             ]);
          }
