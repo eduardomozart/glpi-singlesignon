@@ -1674,84 +1674,14 @@ class Provider extends \CommonDBTM {
          // - assign groups
          // - set recursion
          // Exactly like LDAP.
-         // $user->reapplyRightRules();
+         $user->reapplyRightRules();
 
-         // No profile assigned through rules = user cannot login
-         $profiles = \Profile_User::getUserProfiles($user->getID());
-         if ($this->debug) {
-            print_r("Current user profiles: ");
-            var_dump($profiles);
-         }
-         // Verification default profiles exist in the entity
-         // If no default profile exists, the user will not be able to log in.
-         // In this case, we retrieve a profile and an entity and assign these values ​​to it.
-         // The administrator can change these values ​​later.
-         if (empty($profiles)) {
-            $profils = \Profile::getDefault();
-            if (0 == \Profile::getDefault()) {
-               if ($this->debug) {
-                  print_r("\nNo default profile found, assigning first available profile\n");
-               }
-               // No default profiles
-               // Profile recovery and assignment
-               global $DB;
-               $datasProfiles = [];
-               foreach ($DB->request('glpi_profiles') as $data) {
-                  array_push($datasProfiles, $data);
-               }
-               /* $datasEntities = [];
-               foreach ($DB->request('glpi_entities') as $data) {
-                  array_push($datasEntities, $data);
-               } */
-
-               if ($this->debug) {
-                  print_r("Available profiles: " . count($datasProfiles) . "\n");
-                  // print_r("Available entities: " . count($datasEntities) . "\n");
-               }
-
-               if (count($datasProfiles) > 0) {
-                  $profils = $datasProfiles[0]['id'];
-               } else {
-                  if ($this->debug) {
-                     print_r("No profiles or entities available!\n");
-                  }
-                  return false;
-               }
-            }
-            $entitie = $this->fields['entities_id'];
-
-            if ($this->debug) {
-               print_r("Assigning profile ID: $profils, entity ID: $entitie\n");
-            }
-            $profile   = new \Profile_User();
-            $userProfile['users_id'] = intval($user->fields['id']);
-            $userProfile['entities_id'] = intval($entitie);
-            $userProfile['is_recursive'] = 0; // Sub-entities
-            $userProfile['profiles_id'] = intval($profils);
-            $userProfile['add'] = "Ajouter";
-            $userProfile['is_dynamic'] = 1;
-            $profileResult = $profile->add($userProfile);
-            if ($this->debug) {
-               print_r("Profile assignment result: ");
-               var_dump($profileResult);
-            }
-            if (!$profileResult) {
-               if ($this->debug) {
-                  print_r("Profile assignment failed!\n");
-                  print_r($userProfile);
-               }
-               return false;
-            }
-         } else {
-            if ($this->debug) {
-               print_r("\nUser #{$user->getID()} already has a profile assigned\n");
-            }
-         }
+         $this->assignDefaultProfileToUser($user);
 
          return $user;
       } catch (\Exception $ex) {
          if ($this->debug) {
-            print_r("\nException during user creation:\n");
+            print_r("\nException during user " . (($user->getID() == -1) ? "creation" : "update") . ":\n");
             print_r($ex->getMessage());
             print_r("\n");
             print_r($ex->getTraceAsString());
@@ -1764,6 +1694,80 @@ class Provider extends \CommonDBTM {
          print_r("\nReached end of findUser() - no user found or created\n");
       }
 
+      return false;
+   }
+
+   protected function assignDefaultProfileToUser(\User $user) : bool {
+      // No profile assigned through rules = user cannot login
+      $profiles = \Profile_User::getUserProfiles($user->getID());
+      if ($this->debug) {
+         print_r("Current user profiles: ");
+         var_dump($profiles);
+      }
+      // Verification default profiles exist in the entity
+      // If no default profile exists, the user will not be able to log in.
+      // In this case, we retrieve a profile and an entity and assign these values ​​to it.
+      // The administrator can change these values ​​later.
+      if (empty($profiles)) {
+         $profils = \Profile::getDefault();
+         if (0 == \Profile::getDefault()) {
+            if ($this->debug) {
+               print_r("\nNo default profile found, assigning first available profile\n");
+            }
+            // No default profiles
+            // Profile recovery and assignment
+            global $DB;
+            $datasProfiles = [];
+            foreach ($DB->request('glpi_profiles') as $data) {
+               array_push($datasProfiles, $data);
+            }
+            /* $datasEntities = [];
+            foreach ($DB->request('glpi_entities') as $data) {
+               array_push($datasEntities, $data);
+            } */
+            if ($this->debug) {
+               print_r("Available profiles: " . count($datasProfiles) . "\n");
+               // print_r("Available entities: " . count($datasEntities) . "\n");
+            }
+            if (count($datasProfiles) > 0) {
+               $profils = $datasProfiles[0]['id'];
+            } else {
+               if ($this->debug) {
+                  print_r("No profiles or entities available!\n");
+               }
+               return false;
+            }
+         }
+         $entitie = $this->fields['entities_id'];
+         if ($this->debug) {
+            print_r("Assigning profile ID: $profils, entity ID: $entitie\n");
+         }
+         $profile   = new \Profile_User();
+         $userProfile['users_id'] = intval($user->fields['id']);
+         $userProfile['entities_id'] = intval($entitie);
+         $userProfile['is_recursive'] = 0; // Sub-entities
+         $userProfile['profiles_id'] = intval($profils);
+         $userProfile['add'] = "Ajouter";
+         $userProfile['is_dynamic'] = 1;
+         $profileResult = $profile->add($userProfile);
+         if ($this->debug) {
+            print_r("Profile assignment result: ");
+            var_dump($profileResult);
+         }
+         if (!$profileResult) {
+            if ($this->debug) {
+               print_r("Profile assignment failed!\n");
+               print_r($userProfile);
+            }
+         } else {
+            return true;
+         }
+      } else {
+         if ($this->debug) {
+            print_r("\nUser #{$user->getID()} already has a profile assigned\n");
+         }
+         return true;
+      }
       return false;
    }
 
@@ -1877,39 +1881,22 @@ class Provider extends \CommonDBTM {
 
       // Create fake auth
       // phpcs:disable
-      /* $auth = new Auth();
+      $auth = new Auth();
       $auth->user = $user;
       $auth->auth_succeded = true;
       $auth->extauth = 1;
       $auth->user_present = 1;
       $auth->user->fields['authtype'] = \Auth::DB_GLPI;
 
-      \Session::init($auth);
-
-      // Return false if the profile is not defined in \Session::init($auth)
-      return $auth->auth_succeded; */
-      // phpcs:enable
-
-      global $DB;
-
-      $userId = $user->fields['id'];
-
-      // Set a random password for the current user
-      $tempPassword = bin2hex(random_bytes(64));
-      $DB->update('glpi_users', ['password' => \Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
-
-      // Log-in using the generated password as if you were logging in using the login form
-      $auth = new \Auth();
-      $authResult = $auth->login($user->fields['name'], $tempPassword);
+      $authResult = \Session::init($auth);
       if ($this->debug) {
          print_r("Auth result: ");
          var_dump($authResult);
       }
 
-      // Rollback password change
-      $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
-
+      // Return false if the profile is not defined in \Session::init($auth)
       return $auth;
+      // phpcs:enable
    }
 
    public function linkUser($user_id) {
@@ -1985,7 +1972,7 @@ class Provider extends \CommonDBTM {
     *
     * @return string|boolean Filename to be stored in user picture field, false if no picture found
     */
-   public function syncOAuthPhoto($user) {
+   public function syncOAuthPhoto($user) : bool {
       $token = $this->getAccessToken();
       if (!$token) {
          return false;
@@ -2057,12 +2044,10 @@ class Provider extends \CommonDBTM {
                   ]);
                }
 
-               if (!$success) {
-                  return false;
+               if ($success) {
+                  return true;
                }
             }
-
-            return $user->fields["picture"];
          }
       }
 
