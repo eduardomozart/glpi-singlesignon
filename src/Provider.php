@@ -1778,19 +1778,14 @@ class Provider extends \CommonDBTM {
       $groupUser = new \Group_User();
       $group     = new \Group();
 
-      $keepDynGroupIds = [];
       // Get current user groupsIds
       $curDynGroupIds = [];
-      $result = $DB->request([
-         'SELECT' => ['groups_id'],
-         'FROM'   => 'glpi_groups_users',
-         'WHERE'  => [
-            'users_id'   => $user->getID(),
-            'is_dynamic' => 1
-         ]
+      $links = $groupUser->find([
+         'users_id' => $user->getID(),
+         'is_dynamic' => 1
       ]);
-      foreach ($result as $row) {
-         $curDynGroupIds[] = (int) $row['groups_id'];
+      foreach ($links as $link) {
+         $curDynGroupIds[] = (int) $link['groups_id'];
       }
 
       foreach ($groups as $groupValue) {
@@ -1870,13 +1865,17 @@ class Provider extends \CommonDBTM {
 
       // Unlink unmatched dynamic groups (e.g. user do not belong to group on IdP)
       $unDynGroupIds = array_diff($curDynGroupIds, $keepDynGroupIds);
-      foreach ($unDynGroupIds as $unDynGroupId) {
-         $unlinkResult = $groupUser->delete(['groups_id' => $unDynGroupId, 'users_id' => $user->GetID()], true);
-         if ($this->debug) {
-            if ($unlinkResult) {
-               print_r("\nUnlinked GroupId #{$unDynGroupId} from UserId #{$users_id}\n");
-            } else {
-               print_r("\nFailed to unlink GroupId #{$unDynGroupId} from UserId #{$users_id}\n");
+      foreach ($links as $link) {
+         // Remove user from the group
+         if (in_array($link['groups_id'], $unDynGroupIds)) {
+            $groups_id = $link['groups_id'];
+            $unlinkResult = $groupUser->delete(['id' => $link['id']], true);
+            if ($this->debug) {
+               if ($unlinkResult) {
+                  print_r("\nUnlinked GroupId #{$groups_id} from UserId #{$user->GetID()}\n");
+               } else {
+                  print_r("\nFailed to unlink GroupId #{$groups_id} from UserId #{$user->GetID()}\n");
+               }
             }
          }
       }
