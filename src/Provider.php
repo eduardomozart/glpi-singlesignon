@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-use RuleRightCollection;
-use RuleRight;
-
 /**
  * ---------------------------------------------------------------------
  * SingleSignOn is a plugin which allows to use SSO for auth
@@ -61,7 +58,7 @@ class Provider extends \CommonDBTM {
     */
    protected $_resource_owner = null;
 
-   public $debug = false;
+   public $debug = true;
 
    public static function canCreate(): bool {
       return static::canUpdate();
@@ -1231,42 +1228,47 @@ class Provider extends \CommonDBTM {
                   print_r("\nJSON decode error: " . json_last_error_msg() . "\n");
                }
             } else {
-               foreach ($data['value'] as $entry) {
-                  $group_id = false;
+               if (isset($data['value'])) {
+                  foreach ($data['value'] as $entry) {
+                     $group_id = false;
 
-                  if (($entry['@odata.type'] ?? '') === '#microsoft.graph.group') {
-                     // Check if exists a group association into 'glpi_plugin_singlesignon_providers_users' table
-                     $link = new \PluginSinglesignonProvider_Group();
-                     $condition = "`remote_id` = '{$entry['id']}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
-                     if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-                        $condition = [$condition];
-                     }
-                     $links = $link->find($condition);
-                     // There's a valid link to the Azure AD group
-                     if (!empty($links) && $first = reset($links)) {
-                        $id = $first['groups_id'];
-                        if($group->getFromDB($id)) {
-                           $group_id = $id;
+                     if (($entry['@odata.type'] ?? '') === '#microsoft.graph.group') {
+                        // Check if exists a group association into 'glpi_plugin_singlesignon_providers_users' table
+                        $link = new \PluginSinglesignonProvider_Group();
+                        $condition = "`remote_id` = '{$entry['id']}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
+                        if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+                           $condition = [$condition];
                         }
+                        $links = $link->find($condition);
+                        // There's a valid link to the Azure AD group
+                        if (!empty($links) && $first = reset($links)) {
+                           $id = $first['groups_id'];
+                           if($group->getFromDB($id)) {
+                              $group_id = $id;
+                           }
+                        }
+                        // There's no link or link is broken
+                        if (!$group_id) {
+                           $group_id = $group->add([
+                              'name'        => $entry['displayName'],
+                              'entities_id' => $this->fields['entities_id'],
+                              'is_recursive'=> $this->fields['is_recursive'], // Sub-entities
+                              'comment'     => __('Created automatically by Single Sign-On', 'singlesignon'),
+                              'add'         => 1
+                           ]);
+                        }
+                        $groups[] = $group_id;
                      }
-                     // There's no link or link is broken
-                     if (!$group_id) {
-                        $group_id = $group->add([
-                           'name'        => $entry['displayName'],
-                           'entities_id' => $this->fields['entities_id'],
-                           'is_recursive'=> $this->fields['is_recursive'], // Sub-entities
-                           'comment'     => __('Created automatically by Single Sign-On', 'singlesignon'),
-                           'add'         => 1
-                        ]);
-                     }
-                     $groups[] = $group_id;
                   }
                }
 
                if ($this->debug) {
                   print_r($groups);
                }
-               $this->_resource_owner['groups'] = $groups;
+               
+               if (!empty($groups)) {
+                  $this->_resource_owner['groups'] = $groups;
+               }
             }
          }
       }
@@ -1469,7 +1471,9 @@ class Provider extends \CommonDBTM {
       }
 
       if ($login && $user->getFromDBbyName($login)) {
-         print_r("User found by login name\n");
+         if ($this->debug) {
+            print_r("User found by login name\n");
+         }
       }
 
       if (!$user->getID()) {
