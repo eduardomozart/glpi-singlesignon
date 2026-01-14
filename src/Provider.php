@@ -1483,9 +1483,11 @@ class Provider extends \CommonDBTM {
          }
       }
 
-      if ($login && $user->getFromDBbyName($login)) {
-         if ($this->debug) {
-            print_r("User found by login name\n");
+      if (!$user->getID()) {
+         if ($login && $user->getFromDBbyName($login)) {
+            if ($this->debug) {
+               print_r("User found by login name\n");
+            }
          }
       }
 
@@ -1521,9 +1523,8 @@ class Provider extends \CommonDBTM {
          if (isset($resource_array['given_name'])) {
             $firstname = $resource_array['given_name'];
          }
-         $useremail = $email;
          if (isset($resource_array['email'])) {
-            $useremail = $resource_array['email'];
+            $email = $resource_array['email'];
          }
 
          $userPost = [
@@ -1534,9 +1535,6 @@ class Provider extends \CommonDBTM {
             'picture' => $resource_array['picture'],
             'is_active' => 1
          ];
-         if (!$user->getID()) {
-            $userPost['_useremails'][-1] = $useremail;
-         }
       }
 
       // If the provider is generic (Ex: azure ad without common tenant)
@@ -1583,9 +1581,6 @@ class Provider extends \CommonDBTM {
                }
             }
          }
-         if ($email && !$user->getID()) {
-            $userPost['_useremails'][-1] = $email;
-         }
       }
 
       try {
@@ -1621,6 +1616,38 @@ class Provider extends \CommonDBTM {
             $user->getFromDB($newID);
          } else {
             $user->update($userPost);
+         }
+
+         // Delete dynamic emails (e.g. useremail has been changed on IdP)
+         // see src/User.php@1914
+         if ($email) {
+            $iterator = $DB->request([
+               'SELECT' => [
+                     'id',
+                     'users_id',
+                     'email',
+                     'is_dynamic',
+               ],
+               'FROM'   => 'glpi_useremails',
+               'WHERE'  => ['users_id' => $user->getID()],
+            ]);
+
+            $useremail = new \UserEmail();
+            $has_email = false;
+            foreach ($iterator as $data) {
+               if ($data["email"] == $email) {
+                  $has_email = true;
+               } else if ($data['is_dynamic']) {
+                  $useremail->delete(['id' => $data["id"]]);
+               }
+            }
+
+            if (!$has_email) {
+               $useremail->add(['users_id'   => $user->getID(),
+                                 'email'      => $email,
+                                 'is_dynamic' => 1,
+               ]);
+            }
          }
 
          // Create user groups on the entity which the SSO provider belongs
@@ -1795,7 +1822,6 @@ class Provider extends \CommonDBTM {
          $groupUser->add([
             'users_id'    => $user->getID(),
             'groups_id'   => $groupId,
-            'entities_id' => $entities_id,
             'is_dynamic'  => 1 // IMPORTANT (SSO-managed)
          ]);
       }
