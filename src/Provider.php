@@ -103,7 +103,7 @@ class Provider extends \CommonDBTM {
 
       $debug_mode = ($_SESSION['glpi_use_mode'] == \Session::DEBUG_MODE);
       if ($debug_mode) {
-         $tabs[1] = '<span class="d-flex align-items-center"><i class="ti ti-bug me-2"></i>' . __('Debug') . '</span>';
+         $tabs[1] = self::createTabEntry(__('Debug'), 0, icon: 'ti ti-bug');
       }
 
       return $tabs;
@@ -1640,7 +1640,7 @@ class Provider extends \CommonDBTM {
                      'email',
                      'is_dynamic',
                ],
-               'FROM'   => 'glpi_useremails',
+               'FROM'   => \UserEmail::getTable(),
                'WHERE'  => ['users_id' => $user->getID()],
             ]);
 
@@ -1864,6 +1864,17 @@ class Provider extends \CommonDBTM {
          }
       }
 
+      // Preview dynamic user group assignment based on "Authorizations assignment rules" rules to avoid removing rules dynamic groups
+      $ruleActions = $this->previewAssignmentUserRules($user);
+      foreach ($ruleActions as $ruleAction) {
+         if (
+            ($ruleAction['field'] ?? null) === 'groups_id'
+            && ($ruleAction['is_dynamic'] ?? 0) == 1
+         ) {
+            $keepDynGroupIds[] = (int) $ruleAction['value'];
+         }
+      }
+
       // Unlink unmatched dynamic groups (e.g. user do not belong to group on IdP)
       $unDynGroupIds = array_diff($curDynGroupIds, $keepDynGroupIds);
       foreach ($links as $link) {
@@ -1910,6 +1921,31 @@ class Provider extends \CommonDBTM {
       }
    }
 
+   protected function previewAssignmentUserRules(\User $user) {
+      if (!class_exists(\RuleRightCollection::class)) {
+         // Safety for very old GLPI versions
+         return;
+      }
+
+      // preview rule rights on local user
+      $rules  = new \RuleRightCollection();
+      $groups = \Group_User::getUserGroups($user->getID());
+      $groups_id = array_column($groups, 'id');
+      // Build rule input
+      // This is CRITICAL: keys must match rule criteria names
+      $actions = $rules->testAllRules(
+         $groups_id,
+         $user->fields,
+         [
+         'type'  => \Auth::DB_GLPI,
+         'login' => $this->user->fields['name'],
+         'email' => \UserEmail::getDefaultForUser($user->getID()),
+         ]
+      );
+
+      return $actions;
+   }
+
    public function login() {
       $user = $this->findUser();
 
@@ -1942,13 +1978,13 @@ class Provider extends \CommonDBTM {
 
       // Set a random password for the current user
       $tempPassword = bin2hex(random_bytes(64));
-      $DB->update('glpi_users', ['password' => \Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+      $DB->update(\Users::getTable(), ['password' => \Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
       // Log-in using the generated password as if you were logging in using the login form
       $authResult = $auth->login($user->fields['name'], $tempPassword);
 
       // Rollback password change
-      $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+      $DB->update(\Users::getTable(), ['password' => $user->fields['password']], ['id' => $userId]);
 
       return $auth;
    }

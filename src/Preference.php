@@ -90,7 +90,7 @@ class Preference extends \CommonDBTM {
       switch (get_class($item)) {
          case 'Preference':
          case 'User':
-            return [1 => '<span class="d-flex align-items-center"><i class="fas fa-user-lock me-2"></i>' . \__sso('Single Sign-on') . '</span>'];
+            return self::createTabEntry(\__sso('Single Sign-on'), 0, icon: 'fas fa-user-lock');
          default:
             return '';
       }
