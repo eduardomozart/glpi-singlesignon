@@ -1647,8 +1647,16 @@ class Provider extends CommonDBTM
             }
         }
 
-        $tempPassword = bin2hex(random_bytes(64));
-        $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+        $tempPassword = bin2hex(random_bytes(16));
+        $temporaryPasswordSaved = $DB->update(
+            'glpi_users',
+            ['password' => Auth::getPasswordHash($tempPassword)],
+            ['id' => $userId],
+        );
+        if (!$temporaryPasswordSaved) {
+            $this->lastLoginError = "SSO login failed for user '{$user->fields['name']}': unable to set temporary password";
+            return false;
+        }
 
         // Force local auth only for LDAP users to avoid live LDAP bind.
         $forceLocalAuthentication = (($user->fields['authtype'] ?? null) === Auth::LDAP);
@@ -1657,7 +1665,14 @@ class Provider extends CommonDBTM
             $auth = new Auth();
             $authResult = $auth->login($user->fields['name'], $tempPassword, $forceLocalAuthentication, $remember_me);
         } finally {
-            $DB->update('glpi_users', ['password' => $originalPasswordHash], ['id' => $userId]);
+            $passwordRestored = $DB->update(
+                'glpi_users',
+                ['password' => $originalPasswordHash],
+                ['id' => $userId],
+            );
+            if (!$passwordRestored) {
+                $this->lastLoginError = "SSO login failed for user '{$user->fields['name']}': unable to restore original password";
+            }
         }
 
         if (!$authResult) {
