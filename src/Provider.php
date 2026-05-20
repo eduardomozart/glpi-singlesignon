@@ -1654,13 +1654,14 @@ class Provider extends CommonDBTM
             ['id' => $userId],
         );
         if (!$temporaryPasswordSaved) {
-            $this->lastLoginError = "SSO login failed for user '{$user->fields['name']}': unable to set temporary password";
+            $this->lastLoginError = 'SSO login failed: unable to set temporary password';
             return false;
         }
 
         // Force local auth only for LDAP users to avoid live LDAP bind.
         $forceLocalAuthentication = (($user->fields['authtype'] ?? null) === Auth::LDAP);
 
+        $passwordRestoreFailed = false;
         try {
             $auth = new Auth();
             $authResult = $auth->login($user->fields['name'], $tempPassword, $forceLocalAuthentication, $remember_me);
@@ -1671,8 +1672,13 @@ class Provider extends CommonDBTM
                 ['id' => $userId],
             );
             if (!$passwordRestored) {
-                $this->lastLoginError = "SSO login failed for user '{$user->fields['name']}': unable to restore original password";
+                $this->lastLoginError = 'SSO login failed: unable to restore original password';
+                $passwordRestoreFailed = true;
             }
+        }
+
+        if ($passwordRestoreFailed) {
+            return false;
         }
 
         if (!$authResult) {
