@@ -1380,47 +1380,74 @@ class Provider extends CommonDBTM
 
     private function ensureProfileForNewUser(User $user, int $entitiesId): bool
     {
-        if (Profile::getDefault() != 0) {
-            return true;
-        }
-
         global $DB;
 
-        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
-
-        $datasProfiles = [];
-        foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
-            $datasProfiles[] = $data;
-        }
-        $datasEntities = [];
-        foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
-            $datasEntities[] = $data;
-        }
-
-        if ($configuredProfile > 0) {
-            $profileId = $configuredProfile;
-            $entityForProfile = $entitiesId > 0 ? $entitiesId : (int) ($datasEntities[0]['id'] ?? 0);
-        } else {
-            if (count($datasProfiles) === 0 || count($datasEntities) === 0) {
-                return false;
-            }
-            $profileId = (int) $datasProfiles[0]['id'];
-            $entityForProfile = (int) $datasEntities[0]['id'];
-        }
-
-        if ($profileId <= 0 || $entityForProfile <= 0) {
+        $userId = (int) ($user->fields['id'] ?? 0);
+        if ($userId <= 0) {
             return false;
         }
 
+        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
+        $glpiDefaultProfile = (int) Profile::getDefault();
+        $profileId = 0;
+        if ($configuredProfile > 0) {
+            $profileId = $configuredProfile;
+        } elseif ($glpiDefaultProfile > 0) {
+            $profileId = $glpiDefaultProfile;
+        } else {
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_profiles',
+                'ORDER'  => ['id ASC'],
+                'LIMIT'  => 1,
+            ]) as $profile) {
+                $profileId = (int) ($profile['id'] ?? 0);
+                break;
+            }
+        }
+
+        if ($profileId <= 0) {
+            return false;
+        }
+
+        $entityForProfile = $entitiesId;
+        if ($entityForProfile <= 0) {
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_entities',
+                'ORDER'  => ['id ASC'],
+                'LIMIT'  => 1,
+            ]) as $entity) {
+                $entityForProfile = (int) ($entity['id'] ?? 0);
+                break;
+            }
+        }
+
+        if ($entityForProfile <= 0) {
+            return false;
+        }
+
+        $isRecursive = $configuredProfile > 0
+            ? (int) ($this->fields['default_profiles_id_is_recursive'] ?? 0)
+            : 0;
+
         $pu = new Profile_User();
-        $pu->add([
-            'users_id'      => (int) $user->fields['id'],
+        if ($pu->getFromDBByCrit([
+            'users_id'    => $userId,
+            'entities_id' => $entityForProfile,
+            'profiles_id' => $profileId,
+        ])) {
+            return true;
+        }
+
+        $profileLinkId = $pu->add([
+            'users_id'      => $userId,
             'entities_id'   => $entityForProfile,
-            'is_recursive'  => 0,
+            'is_recursive'  => $isRecursive,
             'profiles_id'   => $profileId,
         ]);
 
-        return true;
+        return is_numeric($profileLinkId) && (int) $profileLinkId > 0;
     }
 
     /**
@@ -1598,6 +1625,17 @@ class Provider extends CommonDBTM
         unset($_SESSION[self::PENDING_REGISTRATION_SESSION_KEY]);
     }
 
+    private function syncRoleGroupsForUser(User $user): void
+    {
+        try {
+            Provider_Group::syncGroups($this, $user);
+        } catch (Exception $ex) {
+            if ($this->debug) {
+                print_r("\nsyncGroups exception: " . $ex->getMessage() . "\n");
+            }
+        }
+    }
+
     /**
      * Completes GLPI session login for a user already resolved by SSO (OAuth/OpenID).
      *
@@ -1627,6 +1665,9 @@ class Provider extends CommonDBTM
         $remember_me = !empty($_SESSION['glpi_singlesignon_remember'])
             && (int) ($CFG_GLPI['login_remember_time'] ?? 0) > 0;
         unset($_SESSION['glpi_singlesignon_remember']);
+
+        // Ensure role→group mapping is available before GLPI auth/rules execution.
+        $this->syncRoleGroupsForUser($user);
 
         // --- 2. Login via local DB auth with temporary password ---
         $userId = (int) $user->fields['id'];
@@ -1692,6 +1733,9 @@ class Provider extends CommonDBTM
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
         }
+
+        // Re-assert dynamic role→group assignments after login in case core auth hooks altered memberships.
+        $this->syncRoleGroupsForUser($user);
 
         try {
             $this->syncOAuthPhoto($user);
