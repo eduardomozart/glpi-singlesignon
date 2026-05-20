@@ -1968,8 +1968,11 @@ class Provider extends CommonDBTM
         $tempPassword = bin2hex(random_bytes(64));
         $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
-        // Force local authentication only for LDAP users to avoid a live LDAP query/bind.
-        $forceLocalAuthentication = (($user->fields['authtype'] ?? null) === Auth::LDAP);
+        // Always force local DB authentication so that Auth::login uses only the
+        // temporary password we set above, preventing any external-auth method
+        // (SSO variables, LDAP live bind, etc.) from authenticating a user that
+        // is not present in glpi_users.
+        $forceLocalAuthentication = true;
 
         try {
             $auth = new Auth();

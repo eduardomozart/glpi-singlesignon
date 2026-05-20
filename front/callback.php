@@ -26,7 +26,6 @@
 
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\NotFoundHttpException;
-use Glpi\Exception\SessionExpiredException;
 use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
@@ -222,23 +221,13 @@ if ($test_cookie) {
     return;
 }
 
-$user_id = 0;
-$existing_user_id = Session::getLoginUserID();
-
-if ($existing_user_id) {
-    try {
-        Session::checkValidSessionId();
-        $user_id = (int) $existing_user_id;
-    } catch (SessionExpiredException $e) {
-        // treat stale session as anonymous and force a fresh login
-        $user_id = 0;
-    }
-}
-
 $query_params = [];
 
-$loginResult = Provider::LOGIN_FAILURE;
-$loginResult = $user_id !== 0 ? Provider::LOGIN_SUCCESS : $signon_provider->login();
+// Always call login() to authenticate via SSO and ensure the user exists in
+// glpi_users. Bypassing login() when a session already exists would allow
+// a logged-in user to "succeed" via an existing GLPI session without the SSO
+// user being created or validated in the database.
+$loginResult = $signon_provider->login();
 
 if ($loginResult !== Provider::LOGIN_FAILURE) {
     // Retrieve redirect stored during authorization step, validating it
@@ -264,9 +253,9 @@ if ($loginResult === Provider::LOGIN_REGISTRATION_PREVIEW) {
     Html::redirect($url_redirect);
 }
 
-if ($user_id || $loginResult === Provider::LOGIN_SUCCESS) {
+if ($loginResult === Provider::LOGIN_SUCCESS) {
 
-    $user_id = $user_id ?: Session::getLoginUserID();
+    $user_id = Session::getLoginUserID();
 
     if ($user_id) {
         $signon_provider->linkUser($user_id);
