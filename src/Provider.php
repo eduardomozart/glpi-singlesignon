@@ -1655,6 +1655,7 @@ class Provider extends CommonDBTM
         );
         if (!$temporaryPasswordSaved) {
             $this->lastLoginError = 'SSO login failed: unable to set temporary password';
+            Toolbox::logDebug($this->lastLoginError);
             return false;
         }
 
@@ -1673,9 +1674,11 @@ class Provider extends CommonDBTM
             );
             if (!$passwordRestored) {
                 $this->lastLoginError = 'SSO login failed: unable to restore original password';
+                Toolbox::logDebug($this->lastLoginError);
                 $passwordRestoreFailed = true;
             }
         }
+        unset($tempPassword);
 
         if ($passwordRestoreFailed) {
             return false;
