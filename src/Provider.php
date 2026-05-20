@@ -1601,21 +1601,12 @@ class Provider extends CommonDBTM
     /**
      * Completes GLPI session login for a user already resolved by SSO (OAuth/OpenID).
      *
-     * GLPI's external auth path expects {@see $CFG_GLPI}['ssovariables_id'] and often a matching
-     * entry in {@see $_SERVER} keyed by the SSO variable name. This method temporarily applies the
-     * first row of `glpi_ssovariables` (by id), sets the remote user on that variable name, runs
-     * {@see Auth::login}, then restores config and server superglobals so later requests are not
-     * polluted.
+     * GLPI rules/profile assignment is reliably triggered when login flows through
+     * local DB auth via {@see Auth::login}. To guarantee this for SSO users, we
+     * temporarily set a random password hash, authenticate once with that password,
+     * then restore the original hash in a finally block.
      *
-     * Process:
-     * 1. Pre-login: snapshot selected session keys (e.g. redirect URL) so Auth can replace the session.
-     * 2. SSO context: load first `glpi_ssovariables` row; set `ssovariables_id` and `$_SERVER[name]`.
-     * 3. Login: {@see Auth::login} with empty password (external auth).
-     * 4. Post-login (always): clear `glpi_remote_user` fake marker; restore `ssovariables_id` and
-     *    remove the temporary `$_SERVER` entry.
-     * 5. On success only: restore saved session keys, sync OAuth avatar if configured.
-     *
-     * @param User $user User row (must include `name` for login name).
+     * @param User $user User row (must include `name` and `id`).
      *
      * @return bool True if {@see Auth::login} succeeded.
      */
@@ -1637,40 +1628,43 @@ class Provider extends CommonDBTM
             && (int) ($CFG_GLPI['login_remember_time'] ?? 0) > 0;
         unset($_SESSION['glpi_singlesignon_remember']);
 
-        // --- 2. Temporary SSO variable context (restored in step 4) ---
-        $original_ssovariables_id = $CFG_GLPI['ssovariables_id'];
-        $sso_variable_name = '';
-
-        $iterator = $DB->request([
-            'FROM'  => 'glpi_ssovariables',
-            'ORDER' => 'id ASC',
-            'LIMIT' => 1,
-        ]);
-
-        foreach ($iterator as $row) {
-            $CFG_GLPI['ssovariables_id'] = (int) $row['id'];
-            $sso_variable_name = (string) $row['name'];
-            $_SERVER[$sso_variable_name] = $user->fields['name'];
-            break;
+        // --- 2. Login via local DB auth with temporary password ---
+        $userId = (int) $user->fields['id'];
+        if ($userId <= 0) {
+            return false;
         }
 
-        // --- 3. Login via external auth (password unused) ---
-        $auth = new Auth();
-        $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
+        $originalPasswordHash = (string) ($user->fields['password'] ?? '');
+        if ($originalPasswordHash === '') {
+            foreach ($DB->request([
+                'SELECT' => ['password'],
+                'FROM'   => 'glpi_users',
+                'WHERE'  => ['id' => $userId],
+                'LIMIT'  => 1,
+            ]) as $row) {
+                $originalPasswordHash = (string) ($row['password'] ?? '');
+                break;
+            }
+        }
 
-        // --- 4. Post-login cleanup (success or failure): undo temporary SSO context ---
-        unset($_SESSION['glpi_remote_user']);
+        $tempPassword = bin2hex(random_bytes(64));
+        $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
-        $CFG_GLPI['ssovariables_id'] = $original_ssovariables_id;
-        if ($sso_variable_name !== '') {
-            unset($_SERVER[$sso_variable_name]);
+        // Force local auth only for LDAP users to avoid live LDAP bind.
+        $forceLocalAuthentication = (($user->fields['authtype'] ?? null) === Auth::LDAP);
+
+        try {
+            $auth = new Auth();
+            $authResult = $auth->login($user->fields['name'], $tempPassword, $forceLocalAuthentication, $remember_me);
+        } finally {
+            $DB->update('glpi_users', ['password' => $originalPasswordHash], ['id' => $userId]);
         }
 
         if (!$authResult) {
             return false;
         }
 
-        // --- 5. Success: restore session snapshot and optional photo sync ---
+        // --- 3. Success: restore session snapshot and optional photo sync ---
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
         }
