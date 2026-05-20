@@ -216,6 +216,7 @@ class ToolboxPlugin
 
             rename($src, $dest);
         } catch (Throwable $e) {
+            static::logFailure(__FUNCTION__, 'failed to create picture directory or move file: ' . $e->getMessage());
             return false;
         }
 
@@ -235,10 +236,12 @@ class ToolboxPlugin
             $fullpath = realpath($fullpath);
             $baseRealPath = realpath($basePath);
         } catch (Throwable $e) {
+            static::logFailure(__FUNCTION__, 'failed to resolve real path for picture deletion: ' . $e->getMessage());
             return false;
         }
 
         if (!static::startsWith($fullpath, $baseRealPath)) {
+            static::logFailure(__FUNCTION__, sprintf('path traversal guard: resolved path "%s" is outside base "%s"', $fullpath, $baseRealPath));
             return false;
         }
 
@@ -246,6 +249,7 @@ class ToolboxPlugin
             unlink($fullpath);
             return true;
         } catch (Throwable $e) {
+            static::logFailure(__FUNCTION__, 'failed to unlink picture file: ' . $e->getMessage());
             return false;
         }
     }
@@ -431,19 +435,30 @@ class ToolboxPlugin
         return '';
     }
 
-    private function logFailure(string $function, string $message, ?User $user = null): void
-    {
-        $providerName = (string) ($this->fields['name'] ?? '');
-        $providerId = (int) ($this->fields['id'] ?? 0);
-        $userName = '';
-        $userId = 0;
-        if ($user !== null) {
-            $userName = (string) ($user->fields['name'] ?? '');
-            $userId = (int) ($user->fields['id'] ?? 0);
-            if ($userId <= 0 && method_exists($user, 'getID')) {
-                $userId = (int) $user->getID();
-            }
-        }
+    /**
+     * Log a plugin failure to `files/_log/plugin_singlesignon.log`.
+     *
+     * This is the single, canonical logging implementation for the plugin.
+     * All Provider_*.php classes delegate here through their own thin wrappers
+     * so that every failure produces a consistently structured log entry.
+     *
+     * Log format: `[function] provider="…" provider_id=… user="…" user_id=… <message>`
+     *
+     * @param string $function     Function name where the failure occurred — pass __FUNCTION__.
+     * @param string $message      Human-readable failure description.
+     * @param string $providerName Name of the SSO provider, if available.
+     * @param int    $providerId   Database ID of the provider, if available.
+     * @param string $userName     Login name of the GLPI user, if available.
+     * @param int    $userId       Database ID of the user, if available.
+     */
+    public static function logFailure(
+        string $function,
+        string $message,
+        string $providerName = '',
+        int $providerId = 0,
+        string $userName = '',
+        int $userId = 0
+    ): void {
         Toolbox::logInFile(
             'plugin_singlesignon',
             sprintf(
