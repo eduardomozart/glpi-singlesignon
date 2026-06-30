@@ -2097,8 +2097,13 @@ class Provider extends CommonDBTM
             break;
         }
 
+        // Prevent GLPI fallback auth from picking up an existing REMOTE_USER (e.g. from Basic Auth)
+        $original_remote_user = $_SERVER['REMOTE_USER'] ?? null;
+        $_SERVER['REMOTE_USER'] = $user->fields['name'];
+
         // Force to run RuleRightCollection::processAllRules in User::getFromSSO by setting a dummy SSO field
         $CFG_GLPI['singlesignon_ssofield'] = 'singlesignon_ssofield_dummy';
+        $_SERVER['singlesignon_ssofield_dummy'] = $user->fields['name'];
         if (isset($user->input['_singlesignon_email'])) {
             $CFG_GLPI['email1_ssofield'] = 'singlesignon_ssofield_email1';
             $_SERVER['singlesignon_ssofield_email1'] = $user->input['_singlesignon_email'];
@@ -2121,6 +2126,13 @@ class Provider extends CommonDBTM
         if ($sso_variable_name !== '') {
             unset($_SERVER[$sso_variable_name]);
         }
+
+        if ($original_remote_user !== null) {
+            $_SERVER['REMOTE_USER'] = $original_remote_user;
+        } else {
+            unset($_SERVER['REMOTE_USER']);
+        }
+        unset($_SERVER['singlesignon_ssofield_dummy']);
 
         if (!$authResult) {
             $userId = (int) $user->fields['id'];
